@@ -9,6 +9,7 @@ import {
   Ticket,
   University,
   Barcode,
+  Users,
 } from 'lucide-react';
 
 import type { NavGroup } from './appSidebar.types';
@@ -21,6 +22,7 @@ export const navGroups: NavGroup[] = [
   {
     label: 'Académico',
     items: [
+      { label: 'Participantes', path: '/participant', icon: Users },
       { label: 'Universidades', path: '/partner-university', icon: University },
       { label: 'Códigos de General', path: '/dynamic-code', icon: Barcode },
     ],

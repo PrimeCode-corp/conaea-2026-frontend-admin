@@ -18,6 +18,7 @@ import PreSale from './pages/panel/PreSale';
 import QuotaType from './pages/panel/QuotaType';
 import AvailableSlot from './pages/panel/AvailableSlot';
 
+import Participant from './pages/panel/Participant';
 import PartnerUniversity from './pages/panel/PartnerUniversity';
 import DynamicCode from './pages/panel/DynamicCode';
 
@@ -45,6 +46,7 @@ function App() {
           <Route path='/pre-sale' element={<PreSale />} />
           <Route path='/available-slot' element={<AvailableSlot />} />
 
+          <Route path='/participant' element={<Participant />} />
           <Route path='/partner-university' element={<PartnerUniversity />} />
           <Route path='/dynamic-code' element={<DynamicCode />} />
 
