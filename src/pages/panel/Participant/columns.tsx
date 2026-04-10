@@ -3,7 +3,7 @@ export const getParticipantColumns = () => [
     id: 1,
     label: 'Documento',
     key: 'identity_document',
-    render: (value: unknown, row: unknown) => {
+    render: (_: unknown, row: unknown) => {
       const r = row as { document_type?: string; identity_document?: string };
 
       const documentTypeShort = r.document_type
