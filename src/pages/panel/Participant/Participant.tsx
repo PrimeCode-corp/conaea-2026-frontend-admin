@@ -159,7 +159,6 @@ const Participant = () => {
             <ParticipantTableButtons
               row={row as unknown as ParticipantTableItem}
               onDocuments={handleDocumentsRequest}
-              onEdit={(r) => console.log('edit', r)}
               onDelete={handleDeleteRequest}
             />
           )}
