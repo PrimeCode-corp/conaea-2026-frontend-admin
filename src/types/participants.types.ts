@@ -1,20 +1,7 @@
 // types/participants.types.ts
 
-// ── Tabla ──────────────────────────────────────────────────────────────
-
-export interface ParticipantVoucher {
-  id: number;
-  payment_method: string;
-  mount: string;
-  voucher: string; // URL
-  created_at: string;
-}
-
-export interface ParticipantEnrollment {
-  id: number;
-  type: string;
-  archive: string; // URL
-}
+import type { Enrollments } from './enrollment.types';
+import type { Vouchers } from './transaction.types';
 
 export interface ParticipantTableItem {
   id: number;
@@ -27,8 +14,9 @@ export interface ParticipantTableItem {
   cellphone: string;
   quota_type: string;
   pre_sale: string;
-  vouchers: ParticipantVoucher[];
-  enrollments: ParticipantEnrollment[];
+  vouchers: Vouchers[];
+  enrollments: Enrollments[];
+  is_validated: boolean;
 }
 
 // ── Filtros ────────────────────────────────────────────────────────────

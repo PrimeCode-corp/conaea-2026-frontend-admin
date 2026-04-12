@@ -4,6 +4,8 @@ import type {
   ParticipantTableItem,
   ParticipantTableFilters,
 } from '@/types/participants.types';
+import type { ValidationResponse } from '@/types/validation.types';
+import { validationService } from '@/services/validationService';
 
 type ParticipantStore = {
   participants: ParticipantTableItem[];
@@ -18,6 +20,16 @@ type ParticipantStore = {
   ) => Promise<void>;
   invalidate: () => Promise<void>;
   removeParticipant: (id: number) => Promise<void>;
+
+  toggleEnrollmentValidation: (
+    enrollmentId: number,
+  ) => Promise<ValidationResponse>;
+  toggleTransactionValidation: (
+    transactionId: number,
+  ) => Promise<ValidationResponse>;
+  toggleRegistrationValidation: (
+    participantId: number,
+  ) => Promise<ValidationResponse>;
 };
 
 export const useParticipantStore = create<ParticipantStore>((set, get) => ({
@@ -56,5 +68,35 @@ export const useParticipantStore = create<ParticipantStore>((set, get) => ({
 
   invalidate: async () => {
     await get().fetchParticipants(get().page);
+  },
+
+  toggleEnrollmentValidation: async (enrollmentId) => {
+    try {
+      const result = await validationService.toggleEnrollment(enrollmentId);
+      await get().invalidate();
+      return result;
+    } catch {
+      throw new Error('Error al validar la ficha');
+    }
+  },
+
+  toggleTransactionValidation: async (transactionId) => {
+    try {
+      const result = await validationService.toggleTransaction(transactionId);
+      await get().invalidate();
+      return result;
+    } catch {
+      throw new Error('Error al validar la transacción');
+    }
+  },
+
+  toggleRegistrationValidation: async (participantId) => {
+    try {
+      const result = await validationService.toggleRegistration(participantId);
+      await get().invalidate();
+      return result;
+    } catch {
+      throw new Error('Error al validar el registro');
+    }
   },
 }));

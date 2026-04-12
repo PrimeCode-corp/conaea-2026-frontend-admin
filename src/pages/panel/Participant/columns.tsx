@@ -1,6 +1,24 @@
 export const getParticipantColumns = () => [
   {
     id: 1,
+    label: 'E',
+    key: 'is_validated',
+    render: (value: unknown) => (
+      <div className='relative group w-fit'>
+        <div
+          className={[
+            'w-3 h-3 rounded-[2px] cursor-pointer',
+            value ? 'bg-green-500' : 'bg-red-500',
+          ].join(' ')}
+        />
+        <div className='absolute bottom-full left-1/2 -translate-x-1/2 mb-1.5 px-2 py-1 rounded-md text-xs font-semibold whitespace-nowrap pointer-events-none opacity-0 group-hover:opacity-100 transition-opacity bg-[#111] border border-white/10 text-slate-200'>
+          {value ? 'Validado' : 'Sin validar'}
+        </div>
+      </div>
+    ),
+  },
+  {
+    id: 2,
     label: 'Documento',
     key: 'identity_document',
     render: (_: unknown, row: unknown) => {
@@ -17,9 +35,9 @@ export const getParticipantColumns = () => [
       );
     },
   },
-  { id: 2, label: 'Nombre', key: 'full_name' },
+  { id: 3, label: 'Nombre', key: 'full_name' },
   {
-    id: 3,
+    id: 4,
     label: 'Tipo',
     key: 'university_type',
     render: (value: unknown) => (
@@ -34,7 +52,7 @@ export const getParticipantColumns = () => [
     ),
   },
   {
-    id: 4,
+    id: 5,
     label: 'Universidad',
     key: 'university_name',
     render: (value: unknown) => {
@@ -51,9 +69,9 @@ export const getParticipantColumns = () => [
       );
     },
   },
-  { id: 5, label: 'Categoría', key: 'quota_type' },
+  { id: 6, label: 'Categoría', key: 'quota_type' },
   {
-    id: 6,
+    id: 7,
     label: 'Celular',
     key: 'cellphone',
     render: (value: unknown) => {
@@ -68,7 +86,7 @@ export const getParticipantColumns = () => [
     },
   },
   {
-    id: 7,
+    id: 8,
     label: 'Preventa',
     key: 'pre_sale',
     render: (value: unknown) => {
