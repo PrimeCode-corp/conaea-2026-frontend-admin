@@ -1,15 +1,17 @@
 import { Button } from '@/components/ui/button';
-import { Trash2 } from 'lucide-react';
+import { Folder, Trash2 } from 'lucide-react';
 import type { ParticipantTableItem } from '@/types/participants.types';
 
 interface ParticipantTableButtonsProps {
   row: ParticipantTableItem;
+  onDocuments?: (row: ParticipantTableItem) => void;
   onEdit?: (row: ParticipantTableItem) => void;
   onDelete?: (row: ParticipantTableItem) => void;
 }
 
 const ParticipantTableButtons = ({
   row,
+  onDocuments,
   // onEdit,
   onDelete,
 }: ParticipantTableButtonsProps) => {
@@ -23,6 +25,14 @@ const ParticipantTableButtons = ({
       >
         <Pencil className='h-3.5 w-3.5' />
       </Button> */}
+      <Button
+        size='sm'
+        variant='ghost'
+        className='h-8 w-8 p-0 text-slate-400 hover:bg-blue-500/10 hover:text-blue-400 transition'
+        onClick={() => onDocuments?.(row)}
+      >
+        <Folder className='h-3.5 w-3.5' />
+      </Button>
       <Button
         size='sm'
         variant='ghost'

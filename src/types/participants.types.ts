@@ -2,17 +2,33 @@
 
 // ── Tabla ──────────────────────────────────────────────────────────────
 
+export interface ParticipantVoucher {
+  id: number;
+  payment_method: string;
+  mount: string;
+  voucher: string; // URL
+  created_at: string;
+}
+
+export interface ParticipantEnrollment {
+  id: number;
+  type: string;
+  archive: string; // URL
+}
+
 export interface ParticipantTableItem {
   id: number;
   document_type: 'DNI' | 'PASAPORTE';
   identity_document: string;
-  photograph: string; // URL
+  photograph: string;
   full_name: string;
   university_type: 'Referido' | 'General';
   university_name: string;
   cellphone: string;
   quota_type: string;
   pre_sale: string;
+  vouchers: ParticipantVoucher[];
+  enrollments: ParticipantEnrollment[];
 }
 
 // ── Filtros ────────────────────────────────────────────────────────────

@@ -13,6 +13,7 @@ import ParticipantFilters from './ParticipantFilters';
 import { getParticipantColumns } from './columns';
 import ParticipantTableButtons from './ParticipantTableButtons';
 import type { ParticipantTableItem } from '@/types/participants.types';
+import ModalDocuments from './modals/ModalDocuments';
 
 type Row = Record<string, unknown>;
 
@@ -37,6 +38,9 @@ const Participant = () => {
   >(undefined);
   const [selectedUniversityType, setSelectedUniversityType] =
     useState<string>('');
+  const [documentsOpen, setDocumentsOpen] = useState(false);
+  const [selectedParticipant, setSelectedParticipant] =
+    useState<ParticipantTableItem | null>(null);
 
   // --- Modal Eliminar ---
   const [confirmOpen, setConfirmOpen] = useState(false);
@@ -94,6 +98,11 @@ const Participant = () => {
     setRowToDelete(null);
   };
 
+  const handleDocumentsRequest = (row: ParticipantTableItem) => {
+    setSelectedParticipant(row);
+    setDocumentsOpen(true);
+  };
+
   const columns = getParticipantColumns();
 
   if (loading) return <LoadingControl />;
@@ -149,6 +158,7 @@ const Participant = () => {
           {(row) => (
             <ParticipantTableButtons
               row={row as unknown as ParticipantTableItem}
+              onDocuments={handleDocumentsRequest}
               onEdit={(r) => console.log('edit', r)}
               onDelete={handleDeleteRequest}
             />
@@ -163,6 +173,15 @@ const Participant = () => {
         loading={deleting}
         title='Eliminar participante'
         description={rowToDelete?.full_name as string}
+      />
+
+      <ModalDocuments
+        open={documentsOpen}
+        onClose={() => {
+          setDocumentsOpen(false);
+          setSelectedParticipant(null);
+        }}
+        participant={selectedParticipant}
       />
 
       <Toaster position='bottom-right' richColors theme='dark' />
