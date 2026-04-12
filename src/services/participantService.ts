@@ -20,4 +20,13 @@ export const participantService = {
     api
       .patch(`/participants/participant/${id}/`, { is_active: false })
       .then((res) => res.data),
+
+  getStats: () =>
+    api
+      .get<{
+        total: number;
+        validated: number;
+        pending: number;
+      }>('/participants/stats/')
+      .then((res) => res.data),
 };

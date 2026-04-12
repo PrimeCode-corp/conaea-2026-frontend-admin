@@ -13,6 +13,7 @@ type ParticipantStore = {
   page: number;
   loading: boolean;
   error: string | null;
+  stats: { total: number; validated: number; pending: number } | null;
 
   fetchParticipants: (
     page?: number,
@@ -30,6 +31,8 @@ type ParticipantStore = {
   toggleRegistrationValidation: (
     participantId: number,
   ) => Promise<ValidationResponse>;
+
+  fetchStats: () => Promise<void>;
 };
 
 export const useParticipantStore = create<ParticipantStore>((set, get) => ({
@@ -38,6 +41,7 @@ export const useParticipantStore = create<ParticipantStore>((set, get) => ({
   page: 1,
   loading: false,
   error: null,
+  stats: null,
 
   fetchParticipants: async (page = 1, params?) => {
     set({ loading: true, error: null });
@@ -97,6 +101,15 @@ export const useParticipantStore = create<ParticipantStore>((set, get) => ({
       return result;
     } catch {
       throw new Error('Error al validar el registro');
+    }
+  },
+
+  fetchStats: async () => {
+    try {
+      const stats = await participantService.getStats();
+      set({ stats });
+    } catch {
+      console.error('Error al cargar estadísticas');
     }
   },
 }));
