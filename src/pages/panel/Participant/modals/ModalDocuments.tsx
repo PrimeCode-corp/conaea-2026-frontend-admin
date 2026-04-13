@@ -181,6 +181,14 @@ const ModalDocuments = ({
     }
   };
 
+  const hasVouchers = stableParticipant.vouchers?.length > 0;
+
+  const currentVoucher = hasVouchers
+    ? stableParticipant.vouchers[voucherIndex]
+    : null;
+
+  const buttonVoucher = stableParticipant?.vouchers[voucherIndex];
+
   return (
     <Dialog open={open} onOpenChange={handleClose}>
       <DialogContent className='bg-[#1a1a1a] border border-white/10 text-slate-200 max-w-2xl md:min-w-3xl'>
@@ -220,7 +228,7 @@ const ModalDocuments = ({
             <div
               className={[
                 'flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold',
-                enrollment.is_validated
+                enrollment?.is_validated
                   ? 'bg-green-500/10 border border-green-500/20 text-green-400'
                   : 'bg-red-500/10 border border-red-500/20 text-red-400',
               ].join(' ')}
@@ -230,17 +238,17 @@ const ModalDocuments = ({
             </div>
           )}
 
-          {step === 2 && stableParticipant.vouchers?.length > 0 && (
+          {step === 2 && currentVoucher && (
             <div
               className={[
                 'flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold',
-                stableParticipant.vouchers[voucherIndex].is_validated
+                currentVoucher.is_validated
                   ? 'bg-green-500/10 border border-green-500/20 text-green-400'
                   : 'bg-red-500/10 border border-red-500/20 text-red-400',
               ].join(' ')}
             >
               <CheckCircle className='w-3.5 h-3.5' />
-              {stableParticipant.vouchers[voucherIndex].is_validated
+              {currentVoucher.is_validated
                 ? 'Voucher validado'
                 : 'Voucher sin validar'}
             </div>
@@ -289,8 +297,7 @@ const ModalDocuments = ({
                   >
                     {validatingTransaction ? (
                       'Procesando...'
-                    ) : stableParticipant.vouchers[voucherIndex]
-                        .is_validated ? (
+                    ) : buttonVoucher?.is_validated ? (
                       <p className='flex items-center gap-1'>
                         <Trash className='size-3' /> Invalidar
                       </p>
@@ -428,7 +435,9 @@ const ModalDocuments = ({
                 </div>
               </div>
             ) : (
-              <p className='text-slate-500 text-sm'>Sin voucher de pago</p>
+              <p className='text-slate-500 text-sm'>
+                No se han realizado pagos
+              </p>
             ))}
         </div>
 
