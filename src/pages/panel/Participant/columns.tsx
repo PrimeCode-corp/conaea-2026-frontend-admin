@@ -35,7 +35,12 @@ export const getParticipantColumns = () => [
       );
     },
   },
-  { id: 3, label: 'Nombre', key: 'full_name' },
+  {
+    id: 3,
+    label: 'Nombre',
+    key: 'full_name',
+    render: (value: string) => value.toUpperCase(),
+  },
   {
     id: 4,
     label: 'Tipo',
