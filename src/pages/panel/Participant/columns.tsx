@@ -39,7 +39,15 @@ export const getParticipantColumns = () => [
     id: 3,
     label: 'Nombre',
     key: 'full_name',
-    render: (value: string) => value.toUpperCase(),
+    render: (_: unknown, row: unknown) => {
+      const r = row as { full_name?: string };
+
+      const documentTypeShort = r.full_name ? r.full_name.toUpperCase() : '---';
+
+      return (
+        <span className='text-slate-200 text-sm'>{documentTypeShort}</span>
+      );
+    },
   },
   {
     id: 4,
