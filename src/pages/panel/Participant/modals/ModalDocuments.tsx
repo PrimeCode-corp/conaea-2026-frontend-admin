@@ -187,8 +187,6 @@ const ModalDocuments = ({
     ? stableParticipant.vouchers[voucherIndex]
     : null;
 
-  const buttonVoucher = stableParticipant?.vouchers[voucherIndex];
-
   return (
     <Dialog open={open} onOpenChange={handleClose}>
       <DialogContent className='bg-[#1a1a1a] border border-white/10 text-slate-200 max-w-2xl md:min-w-3xl'>
@@ -297,7 +295,7 @@ const ModalDocuments = ({
                   >
                     {validatingTransaction ? (
                       'Procesando...'
-                    ) : buttonVoucher?.is_validated ? (
+                    ) : stableParticipant.enrollments[0].is_validated ? (
                       <p className='flex items-center gap-1'>
                         <Trash className='size-3' /> Invalidar
                       </p>
@@ -420,15 +418,14 @@ const ModalDocuments = ({
                     >
                       {validatingTransaction ? (
                         'Procesando...'
-                      ) : stableParticipant.vouchers[voucherIndex]
-                          .is_validated ? (
-                        <p className='flex items-center gap-1'>
+                      ) : currentVoucher?.is_validated ? (
+                        <span className='flex items-center gap-1'>
                           <Trash className='size-3' /> Invalidar
-                        </p>
+                        </span>
                       ) : (
-                        <p className='flex items-center gap-1'>
+                        <span className='flex items-center gap-1'>
                           <CheckCircle className='size-3' /> Validar
-                        </p>
+                        </span>
                       )}
                     </button>
                   </div>
