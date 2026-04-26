@@ -1,4 +1,4 @@
-import { useRef, useState } from 'react';
+import { useRef, useState, useEffect } from 'react';
 import {
   FileText,
   CreditCard,
@@ -38,6 +38,7 @@ const ModalDocuments = ({
   onClose,
   participant,
 }: ModalDocumentsProps) => {
+  // ── Todos los hooks PRIMERO, sin excepción ─────────────────
   const {
     updateVoucher,
     updateVoucherDetails,
@@ -56,54 +57,60 @@ const ModalDocuments = ({
   } = useParticipantStore();
 
   const enrollmentInputRef = useRef<HTMLInputElement>(null);
-
   const voucherInputRef = useRef<HTMLInputElement>(null);
-
-  const lastParticipantRef = useRef<ParticipantTableItem | null>(null); // 👈
+  const lastParticipantRef = useRef<ParticipantTableItem | null>(null);
 
   const [step, setStep] = useState(1);
-
   const [voucherIndex, setVoucherIndex] = useState(0);
-
   const [detailsOpen, setDetailsOpen] = useState(false);
-
   const [detailsForm, setDetailsForm] = useState({
     payment_method: '',
     mount: '',
     payment_date: '',
   });
-
   const [validatingEnrollment, setValidatingEnrollment] = useState(false);
-
   const [validatingTransaction, setValidatingTransaction] = useState(false);
 
+  // Mantiene el último participante válido para evitar flicker al cerrar
   const liveParticipant =
     participants.find((p) => p.id === participant?.id) ?? participant;
-
   if (liveParticipant) {
-    lastParticipantRef.current = liveParticipant; // 👈 guarda el último valor válido
+    lastParticipantRef.current = liveParticipant;
   }
 
+  const stableParticipant = lastParticipantRef.current;
+  const isGeneral = stableParticipant?.quota_type === 'General';
+  const VISIBLE_STEPS = isGeneral ? STEPS.filter((s) => s.id !== 1) : STEPS;
+
+  // Sincroniza step y voucherIndex cuando se abre el modal o cambia el participante
+  useEffect(() => {
+    if (open) {
+      setStep(isGeneral ? 2 : 1);
+      setVoucherIndex(0);
+    }
+  }, [open, participant?.id, isGeneral]);
+
+  // ── Return condicional DESPUÉS de todos los hooks ──────────
+  if (!stableParticipant) return null;
+
+  const enrollment = stableParticipant.enrollments?.[0];
+  const hasVouchers = stableParticipant.vouchers?.length > 0;
+  const currentVoucher = hasVouchers
+    ? stableParticipant.vouchers[voucherIndex]
+    : null;
+
+  const handleClose = () => {
+    onClose();
+  };
+
   const handleOpenDetails = () => {
-    const v = stableParticipant?.vouchers[voucherIndex];
+    const v = stableParticipant.vouchers[voucherIndex];
     setDetailsForm({
       payment_method: v?.payment_method || '',
       mount: v?.mount || '',
       payment_date: v?.payment_date || '',
     });
     setDetailsOpen(true);
-  };
-
-  const stableParticipant = lastParticipantRef.current;
-
-  if (!stableParticipant) return null;
-
-  const enrollment = stableParticipant.enrollments?.[0];
-
-  const handleClose = () => {
-    setStep(1);
-    setVoucherIndex(0);
-    onClose();
   };
 
   const handleReplaceEnrollment = async (
@@ -127,9 +134,9 @@ const ModalDocuments = ({
   ) => {
     const file = e.target.files?.[0];
     if (!file) return;
-    const currentVoucher = stableParticipant.vouchers[voucherIndex];
+    const currentV = stableParticipant.vouchers[voucherIndex];
     try {
-      await updateVoucher(currentVoucher.id, file);
+      await updateVoucher(currentV.id, file);
       toast.success('Voucher actualizado correctamente.');
       await invalidate();
     } catch {
@@ -140,9 +147,9 @@ const ModalDocuments = ({
   };
 
   const handleSaveDetails = async () => {
-    const currentVoucher = stableParticipant.vouchers[voucherIndex];
+    const currentV = stableParticipant.vouchers[voucherIndex];
     try {
-      await updateVoucherDetails(currentVoucher.id, {
+      await updateVoucherDetails(currentV.id, {
         payment_method: detailsForm.payment_method,
         mount: detailsForm.mount,
         payment_date: detailsForm.payment_date,
@@ -169,7 +176,7 @@ const ModalDocuments = ({
   };
 
   const handleValidateTransaction = async () => {
-    const currentVoucher = stableParticipant.vouchers[voucherIndex];
+    if (!currentVoucher) return;
     setValidatingTransaction(true);
     try {
       await toggleTransactionValidation(currentVoucher.id);
@@ -181,18 +188,12 @@ const ModalDocuments = ({
     }
   };
 
-  const hasVouchers = stableParticipant.vouchers?.length > 0;
-
-  const currentVoucher = hasVouchers
-    ? stableParticipant.vouchers[voucherIndex]
-    : null;
-
   return (
     <Dialog open={open} onOpenChange={handleClose}>
       <DialogContent className='bg-[#1a1a1a] border border-white/10 text-slate-200 max-w-2xl md:min-w-3xl'>
         <DialogHeader>
           <DialogTitle className='text-slate-100 font-bold'>
-            {stableParticipant.identity_document} -{' '}
+            {stableParticipant.identity_document} —{' '}
             {stableParticipant.full_name}
           </DialogTitle>
         </DialogHeader>
@@ -200,7 +201,7 @@ const ModalDocuments = ({
         {/* Steps indicator */}
         <div className='flex items-center justify-between'>
           <div className='flex items-center gap-2'>
-            {STEPS.map((s, i) => (
+            {VISIBLE_STEPS.map((s, i) => (
               <div key={s.id} className='flex items-center gap-2'>
                 <button
                   onClick={() => setStep(s.id)}
@@ -214,7 +215,7 @@ const ModalDocuments = ({
                   <s.icon className='w-3.5 h-3.5' />
                   {s.label}
                 </button>
-                {i < STEPS.length - 1 && (
+                {i < VISIBLE_STEPS.length - 1 && (
                   <ChevronRight className='w-3.5 h-3.5 text-slate-600' />
                 )}
               </div>
@@ -226,7 +227,7 @@ const ModalDocuments = ({
             <div
               className={[
                 'flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold',
-                enrollment?.is_validated
+                enrollment.is_validated
                   ? 'bg-green-500/10 border border-green-500/20 text-green-400'
                   : 'bg-red-500/10 border border-red-500/20 text-red-400',
               ].join(' ')}
@@ -289,20 +290,18 @@ const ModalDocuments = ({
                   <button
                     onClick={handleValidateEnrollment}
                     disabled={validatingEnrollment}
-                    className={[
-                      'cursor-pointer flex items-center gap-2 px-3 py-1.5 rounded-lg text-xs font-semibold transition-all disabled:opacity-50 w-fit bg-blue-500/10 text-blue-400 hover:bg-blue-500/20',
-                    ].join(' ')}
+                    className='cursor-pointer flex items-center gap-2 px-3 py-1.5 rounded-lg text-xs font-semibold transition-all disabled:opacity-50 w-fit bg-blue-500/10 text-blue-400 hover:bg-blue-500/20'
                   >
-                    {validatingTransaction ? (
+                    {validatingEnrollment ? (
                       'Procesando...'
-                    ) : stableParticipant.enrollments[0].is_validated ? (
-                      <p className='flex items-center gap-1'>
+                    ) : enrollment.is_validated ? (
+                      <span className='flex items-center gap-1'>
                         <Trash className='size-3' /> Invalidar
-                      </p>
+                      </span>
                     ) : (
-                      <p className='flex items-center gap-1'>
+                      <span className='flex items-center gap-1'>
                         <CheckCircle className='size-3' /> Validar
-                      </p>
+                      </span>
                     )}
                   </button>
                 </div>
@@ -313,9 +312,9 @@ const ModalDocuments = ({
 
           {/* Step 2 — Voucher de pago */}
           {step === 2 &&
-            (stableParticipant.vouchers?.length > 0 ? (
+            (hasVouchers ? (
               <div className='flex gap-3 w-full h-full'>
-                {/* Lista de vouchers (solo si hay más de uno) */}
+                {/* Lista lateral de vouchers */}
                 {stableParticipant.vouchers.length > 1 && (
                   <div className='flex flex-col gap-2 w-36 shrink-0'>
                     {stableParticipant.vouchers.map((v, i) => (
@@ -412,9 +411,7 @@ const ModalDocuments = ({
                     <button
                       onClick={handleValidateTransaction}
                       disabled={validatingTransaction}
-                      className={[
-                        'cursor-pointer flex items-center gap-2 px-3 py-1.5 rounded-lg text-xs font-semibold transition-all disabled:opacity-50 w-fit bg-blue-500/10 text-blue-400 hover:bg-blue-500/20',
-                      ].join(' ')}
+                      className='cursor-pointer flex items-center gap-2 px-3 py-1.5 rounded-lg text-xs font-semibold transition-all disabled:opacity-50 w-fit bg-blue-500/10 text-blue-400 hover:bg-blue-500/20'
                     >
                       {validatingTransaction ? (
                         'Procesando...'
@@ -441,19 +438,24 @@ const ModalDocuments = ({
         {/* Navigation */}
         <div className='flex items-center justify-between mt-2'>
           <button
-            onClick={() => setStep((s) => Math.max(1, s - 1))}
-            disabled={step === 1}
+            onClick={() => setStep((s) => Math.max(VISIBLE_STEPS[0].id, s - 1))}
+            disabled={step === VISIBLE_STEPS[0].id}
             className='flex items-center gap-1 px-3 py-1.5 rounded-lg text-xs font-semibold text-slate-400 hover:bg-white/5 disabled:opacity-30 disabled:cursor-not-allowed transition-all cursor-pointer'
           >
             <ChevronLeft className='w-3.5 h-3.5' />
             Anterior
           </button>
           <span className='text-xs text-slate-500'>
-            {step} / {STEPS.length}
+            {VISIBLE_STEPS.findIndex((s) => s.id === step) + 1} /{' '}
+            {VISIBLE_STEPS.length}
           </span>
           <button
-            onClick={() => setStep((s) => Math.min(STEPS.length, s + 1))}
-            disabled={step === STEPS.length}
+            onClick={() =>
+              setStep((s) =>
+                Math.min(VISIBLE_STEPS[VISIBLE_STEPS.length - 1].id, s + 1),
+              )
+            }
+            disabled={step === VISIBLE_STEPS[VISIBLE_STEPS.length - 1].id}
             className='cursor-pointer flex items-center gap-1 px-3 py-1.5 rounded-lg text-xs font-semibold text-slate-400 hover:bg-white/5 disabled:opacity-30 disabled:cursor-not-allowed transition-all'
           >
             Siguiente

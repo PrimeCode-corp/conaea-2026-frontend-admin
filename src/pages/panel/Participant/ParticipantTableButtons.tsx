@@ -19,8 +19,12 @@ const ParticipantTableButtons = ({
   const { toggleRegistrationValidation } = useParticipantStore();
   const [validating, setValidating] = useState(false);
 
+  const isGeneral = row.quota_type === 'General';
+
   const allEnrollmentsValidated =
-    row.enrollments.length > 0 && row.enrollments.every((e) => e.is_validated);
+    isGeneral ||
+    (row.enrollments.length > 0 &&
+      row.enrollments.every((e) => e.is_validated));
 
   const allVouchersValidated =
     row.vouchers.length > 0 && row.vouchers.every((v) => v.is_validated);
