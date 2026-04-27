@@ -18,7 +18,7 @@ export const participantService = {
 
   remove: (id: number) =>
     api
-      .patch(`/participants/participant/${id}/`, { is_active: false })
+      .patch(`/participants/participant/${id}/deactivate/`)
       .then((res) => res.data),
 
   getStats: () =>
