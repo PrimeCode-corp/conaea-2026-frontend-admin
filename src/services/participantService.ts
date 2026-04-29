@@ -16,6 +16,13 @@ export const participantService = {
       .then((res) => res.data);
   },
 
+  update: (id: number, formData: FormData) =>
+    api
+      .patch(`/participants/participant/${id}/update/`, formData, {
+        headers: { 'Content-Type': 'multipart/form-data' },
+      })
+      .then((res) => res.data),
+
   remove: (id: number) =>
     api
       .patch(`/participants/participant/${id}/deactivate/`)

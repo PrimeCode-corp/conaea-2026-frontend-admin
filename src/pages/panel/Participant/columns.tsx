@@ -29,7 +29,7 @@ export const getParticipantColumns = () => [
         : '---';
 
       return (
-        <span className='text-slate-200 text-sm'>
+        <span className='text-slate-200 text-xs'>
           {documentTypeShort} - {r.identity_document ?? 'Sin documento'}
         </span>
       );
@@ -45,27 +45,31 @@ export const getParticipantColumns = () => [
       const documentTypeShort = r.full_name ? r.full_name.toUpperCase() : '---';
 
       return (
-        <span className='text-slate-200 text-sm'>{documentTypeShort}</span>
+        <div className='max-w-48'>
+          <span className='text-slate-200 text-xs text-wrap'>
+            {documentTypeShort}
+          </span>
+        </div>
       );
     },
   },
+  // {
+  //   id: 4,
+  //   label: 'Tipo',
+  //   key: 'university_type',
+  //   render: (value: unknown) => (
+  //     <span
+  //       className={[
+  //         'text-xs font-normal px-2 py-1 rounded-lg text-white',
+  //         value === 'Referido' ? 'bg-green-500/40 ' : 'bg-blue-500/40',
+  //       ].join(' ')}
+  //     >
+  //       {value as string}
+  //     </span>
+  //   ),
+  // },
   {
     id: 4,
-    label: 'Tipo',
-    key: 'university_type',
-    render: (value: unknown) => (
-      <span
-        className={[
-          'text-xs font-normal px-2 py-1 rounded-lg text-white',
-          value === 'Referido' ? 'bg-green-500/40 ' : 'bg-blue-500/40',
-        ].join(' ')}
-      >
-        {value as string}
-      </span>
-    ),
-  },
-  {
-    id: 5,
     label: 'Universidad',
     key: 'university_name',
     render: (value: unknown) => {
@@ -78,11 +82,25 @@ export const getParticipantColumns = () => [
         .trim(); // Quita espacios al inicio y final
 
       return (
-        <span className='text-slate-200 text-sm'>{cleanedName || '—'}</span>
+        <div className='max-w-48'>
+          <span className='text-slate-200 text-xs  text-wrap'>
+            {cleanedName.toUpperCase() || '—'}
+          </span>
+        </div>
       );
     },
   },
-  { id: 6, label: 'Categoría', key: 'quota_type' },
+  { id: 5, label: 'Categoría', key: 'quota_type' },
+  {
+    id: 6,
+    label: 'Correo',
+    key: 'email',
+    render: (value: unknown) => {
+      const email = (value as string) || '';
+
+      return <span className='text-slate-200 text-xs'>{email || '—'}</span>;
+    },
+  },
   {
     id: 7,
     label: 'Celular',
@@ -94,26 +112,30 @@ export const getParticipantColumns = () => [
       const formattedPhone = phone.replace(/^(\(\+\d+\))(\d+)/, '$1 $2');
 
       return (
-        <span className='text-slate-200 text-sm'>{formattedPhone || '—'}</span>
+        <span className='text-slate-200 text-xs'>{formattedPhone || '—'}</span>
       );
     },
   },
-  {
-    id: 8,
-    label: 'Preventa',
-    key: 'pre_sale',
-    render: (value: unknown) => {
-      const preSale = (value as string) || '';
+  // {
+  //   id: 8,
+  //   label: 'Preventa',
+  //   key: 'pre_sale',
+  //   render: (value: unknown) => {
+  //     const preSale = (value as string) || '';
 
-      // Elimina la palabra "Preventa" sin importar mayúsculas/minúsculas
-      const cleanedPreSale = preSale
-        .replace(/\bpreventa\b/gi, '') // Quita la palabra
-        .replace(/\s{2,}/g, ' ') // Elimina espacios dobles
-        .trim(); // Quita espacios al inicio y final
+  //     // Elimina la palabra "Preventa" sin importar mayúsculas/minúsculas
+  //     const cleanedPreSale = preSale
+  //       .replace(/\bpreventa\b/gi, '') // Quita la palabra
+  //       .replace(/\s{2,}/g, ' ') // Elimina espacios dobles
+  //       .trim(); // Quita espacios al inicio y final
 
-      return (
-        <span className='text-slate-200 text-sm'>{cleanedPreSale || '—'}</span>
-      );
-    },
-  },
+  //     return (
+  //       <div className='w-full flex justify-center'>
+  //         <span className='text-slate-200 text-xs'>
+  //           {cleanedPreSale || '—'}
+  //         </span>
+  //       </div>
+  //     );
+  //   },
+  // },
 ];

@@ -21,6 +21,7 @@ type ParticipantStore = {
   ) => Promise<void>;
   invalidate: () => Promise<void>;
   removeParticipant: (id: number) => Promise<void>;
+  updateParticipant: (id: number, formData: FormData) => Promise<void>;
 
   toggleEnrollmentValidation: (
     enrollmentId: number,
@@ -56,6 +57,15 @@ export const useParticipantStore = create<ParticipantStore>((set, get) => ({
       set({ error: 'Error al cargar los participantes' });
     } finally {
       set({ loading: false });
+    }
+  },
+
+  updateParticipant: async (id, formData) => {
+    try {
+      await participantService.update(id, formData);
+      await get().invalidate();
+    } catch {
+      throw new Error('Error al actualizar el participante');
     }
   },
 

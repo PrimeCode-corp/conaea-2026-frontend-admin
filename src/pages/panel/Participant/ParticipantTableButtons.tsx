@@ -1,5 +1,5 @@
 import { Button } from '@/components/ui/button';
-import { CheckCheck, Folder, Trash2 } from 'lucide-react';
+import { CheckCheck, Folder, Pencil, Trash2 } from 'lucide-react';
 import { useState } from 'react';
 import { toast } from 'sonner';
 import type { ParticipantTableItem } from '@/types/participants.types';
@@ -9,12 +9,14 @@ interface ParticipantTableButtonsProps {
   row: ParticipantTableItem;
   onDocuments?: (row: ParticipantTableItem) => void;
   onDelete?: (row: ParticipantTableItem) => void;
+  onEdit?: (row: ParticipantTableItem) => void; // 👈
 }
 
 const ParticipantTableButtons = ({
   row,
   onDocuments,
   onDelete,
+  onEdit,
 }: ParticipantTableButtonsProps) => {
   const { toggleRegistrationValidation } = useParticipantStore();
   const [validating, setValidating] = useState(false);
@@ -60,6 +62,7 @@ const ParticipantTableButtons = ({
 
   return (
     <div className='flex items-center justify-end gap-1'>
+      {/* Validar */}
       <div className='relative group'>
         <Button
           size='sm'
@@ -76,7 +79,6 @@ const ParticipantTableButtons = ({
           <CheckCheck className='h-3.5 w-3.5' />
         </Button>
 
-        {/* Tooltip — solo cuando está disabled */}
         {tooltipMessage && (
           <div className='absolute bottom-full right-0 mb-1.5 px-2 py-1 rounded-md text-xs font-semibold whitespace-nowrap pointer-events-none opacity-0 group-hover:opacity-100 transition-opacity bg-[#111] border border-white/10 text-slate-200 z-10'>
             {tooltipMessage}
@@ -84,18 +86,31 @@ const ParticipantTableButtons = ({
         )}
       </div>
 
+      {/* Editar */}
       <Button
         size='sm'
         variant='ghost'
-        className='h-8 w-8 p-0 text-slate-400 hover:bg-blue-500/10 hover:text-blue-400 transition'
+        className='h-8 w-8 p-0 text-slate-400 hover:bg-yellow-500/10 hover:text-yellow-400 transition cursor-pointer'
+        onClick={() => onEdit?.(row)}
+      >
+        <Pencil className='h-3.5 w-3.5' />
+      </Button>
+
+      {/* Documentos */}
+      <Button
+        size='sm'
+        variant='ghost'
+        className='h-8 w-8 p-0 text-slate-400 hover:bg-blue-500/10 hover:text-blue-400 transition cursor-pointer'
         onClick={() => onDocuments?.(row)}
       >
         <Folder className='h-3.5 w-3.5' />
       </Button>
+
+      {/* Eliminar */}
       <Button
         size='sm'
         variant='ghost'
-        className='h-8 w-8 p-0 text-slate-400 hover:bg-red-500/10 hover:text-red-400 transition'
+        className='h-8 w-8 p-0 text-slate-400 hover:bg-red-500/10 hover:text-red-400 transition cursor-pointer'
         onClick={() => onDelete?.(row)}
       >
         <Trash2 className='h-3.5 w-3.5' />

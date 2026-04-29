@@ -14,6 +14,7 @@ import { getParticipantColumns } from './columns';
 import ParticipantTableButtons from './ParticipantTableButtons';
 import type { ParticipantTableItem } from '@/types/participants.types';
 import ModalDocuments from './modals/ModalDocuments';
+import ModalEditParticipant from './modals/ModalEditParticipant';
 
 type Row = Record<string, unknown>;
 
@@ -40,6 +41,10 @@ const Participant = () => {
     useState<string>('');
   const [documentsOpen, setDocumentsOpen] = useState(false);
   const [selectedParticipant, setSelectedParticipant] =
+    useState<ParticipantTableItem | null>(null);
+
+  const [editOpen, setEditOpen] = useState(false);
+  const [selectedEditParticipant, setSelectedEditParticipant] =
     useState<ParticipantTableItem | null>(null);
 
   // --- Modal Eliminar ---
@@ -103,6 +108,11 @@ const Participant = () => {
     setDocumentsOpen(true);
   };
 
+  const handleEditRequest = (row: ParticipantTableItem) => {
+    setSelectedEditParticipant(row);
+    setEditOpen(true);
+  };
+
   const columns = getParticipantColumns();
 
   if (loading) return <LoadingControl />;
@@ -158,6 +168,7 @@ const Participant = () => {
           {(row) => (
             <ParticipantTableButtons
               row={row as unknown as ParticipantTableItem}
+              onEdit={handleEditRequest}
               onDocuments={handleDocumentsRequest}
               onDelete={handleDeleteRequest}
             />
@@ -181,6 +192,15 @@ const Participant = () => {
           setSelectedParticipant(null);
         }}
         participant={selectedParticipant}
+      />
+
+      <ModalEditParticipant
+        open={editOpen}
+        onClose={() => {
+          setEditOpen(false);
+          setSelectedEditParticipant(null);
+        }}
+        participant={selectedEditParticipant}
       />
 
       <Toaster position='bottom-right' richColors theme='dark' />

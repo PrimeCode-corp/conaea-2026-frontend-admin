@@ -12,6 +12,7 @@ export interface ParticipantTableItem {
   university_type: 'Referido' | 'General';
   university_name: string;
   cellphone: string;
+  email: string;
   quota_type: string;
   pre_sale: string;
   vouchers: Vouchers[];

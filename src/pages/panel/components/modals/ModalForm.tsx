@@ -46,7 +46,7 @@ const ModalForm = <T extends Record<string, unknown>>({
 }: ModalFormProps<T>) => {
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className='bg-[#1a1a1a] border border-white/10 text-slate-200 sm:max-w-md'>
+      <DialogContent className='bg-[#1a1a1a] border border-white/10 text-slate-200 sm:max-w-md max-h-[80vh] overflow-y-auto'>
         <ModalHeader title={title} description={description} icon={icon} />
 
         <FormFields
