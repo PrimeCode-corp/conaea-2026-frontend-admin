@@ -5,6 +5,7 @@ import FormFile from './FormFile';
 import FormPhoto from './FormPhoto';
 import FormInputCheckbox from './FormInputCheckbox';
 import FormUniversitySelect from './FormUniversitySelect';
+import FormSearchSelect from './FormSearchSelect';
 
 interface Option {
   label: string;
@@ -68,13 +69,23 @@ type UniversitySelectProps = BaseProps & {
   disabled?: boolean;
 };
 
+type SearchSelectProps = BaseProps & {
+  kind: 'search-select';
+  value: string;
+  options: Option[];
+  onValueChange: (value: string) => void;
+  placeholder?: string;
+  disabled?: boolean;
+};
+
 type InputControllerProps =
   | InputProps
   | SelectProps
   | FileProps
   | PhotoProps
   | InputCheckboxProps
-  | UniversitySelectProps;
+  | UniversitySelectProps
+  | SearchSelectProps;
 
 const InputController = ({ kind, ...props }: InputControllerProps) => {
   if (kind === 'select')
@@ -87,6 +98,8 @@ const InputController = ({ kind, ...props }: InputControllerProps) => {
     return <FormInputCheckbox {...(props as Omit<InputCheckboxProps, 'kind'>)} />;
   if (kind === 'university-select')
     return <FormUniversitySelect {...(props as Omit<UniversitySelectProps, 'kind'>)} />;
+  if (kind === 'search-select')
+    return <FormSearchSelect {...(props as Omit<SearchSelectProps, 'kind'>)} />;
   return <FormInput {...(props as Omit<InputProps, 'kind'>)} />;
 };
 

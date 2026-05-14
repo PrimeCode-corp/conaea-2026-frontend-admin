@@ -76,6 +76,21 @@ const FormFields = <T extends Record<string, unknown>>({
       );
     }
 
+    if (field.kind === 'search-select') {
+      return (
+        <InputController
+          kind='search-select'
+          label={field.label}
+          value={field.id ? ((form[field.id] as string) ?? '') : ''}
+          options={field.options ?? []}
+          onValueChange={(val) => field.id && onValueChange?.(field.id, val)}
+          placeholder={field.placeholder}
+          disabled={field.disabled}
+          error={error}
+        />
+      );
+    }
+
     if (field.kind === 'university-select') {
       return (
         <InputController

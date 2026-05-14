@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { Users } from 'lucide-react';
 import { Toaster, toast } from 'sonner';
 
@@ -15,8 +15,7 @@ import type { ParticipantTableItem } from '@/types/participants.types';
 import ModalDocuments from './modals/ModalDocuments';
 import ModalEditParticipant from './modals/ModalEditParticipant';
 import ModalEmailLogs from './modals/ModalEmailLogs';
-import { emailLogService } from '@/services/emailLogService';
-
+import ModalImage from '../components/modals/ModalImage';
 type Row = Record<string, unknown>;
 
 const Participant = () => {
@@ -29,6 +28,9 @@ const Participant = () => {
     fetchParticipants,
     removeParticipant,
   } = useParticipantStore();
+
+  const [initialized, setInitialized] = useState(false);
+  const initializedRef = useRef(false);
 
   const [search, setSearch] = useState('');
   const [selectedPreSaleId, setSelectedPreSaleId] = useState<
@@ -51,14 +53,14 @@ const Participant = () => {
   const [emailLogsOpen, setEmailLogsOpen] = useState(false);
   const [selectedEmailLogsParticipant, setSelectedEmailLogsParticipant] =
     useState<ParticipantTableItem | null>(null);
-  const [emailStatusMap, setEmailStatusMap] = useState<
-    Record<number, 'sent' | 'failed' | 'pending' | 'disabled' | null>
-  >({});
 
   // --- Modal Eliminar ---
   const [confirmOpen, setConfirmOpen] = useState(false);
   const [rowToDelete, setRowToDelete] = useState<Row | null>(null);
   const [deleting, setDeleting] = useState(false);
+
+  const [previewOpen, setPreviewOpen] = useState(false);
+  const [previewImage, setPreviewImage] = useState<string | null>(null);
 
   const params = {
     search: search || undefined,
@@ -69,11 +71,28 @@ const Participant = () => {
   };
 
   useEffect(() => {
+    const init = async () => {
+      await fetchParticipants(1);
+      const { preSales } = useParticipantStore.getState();
+      const def = preSales.find((p) => p.is_default);
+      if (def) {
+        setSelectedPreSaleId(def.id);
+        await fetchParticipants(1, { pre_sale_id: def.id });
+      }
+      initializedRef.current = true;
+      setInitialized(true);
+    };
+    init();
+  }, []);
+
+  useEffect(() => {
+    if (!initializedRef.current) return;
     const timeout = setTimeout(
       () => fetchParticipants(1, params),
       search ? 400 : 0,
     );
     return () => clearTimeout(timeout);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [
     search,
     selectedPreSaleId,
@@ -81,22 +100,6 @@ const Participant = () => {
     selectedQuotaTypeId,
     selectedUniversityCode,
   ]);
-
-  useEffect(() => {
-    if (participants.length === 0) return;
-    Promise.all(
-      participants.map((p) =>
-        emailLogService
-          .getLastStatus(p.id)
-          .then((status) => ({ id: p.id, status }))
-          .catch(() => ({ id: p.id, status: null })),
-      ),
-    ).then((results) => {
-      setEmailStatusMap(
-        Object.fromEntries(results.map(({ id, status }) => [id, status])),
-      );
-    });
-  }, [participants]);
 
   const handleDeleteRequest = (row: ParticipantTableItem) => {
     setRowToDelete(row as unknown as Row);
@@ -139,7 +142,10 @@ const Participant = () => {
     setEmailLogsOpen(true);
   };
 
-  const columns = getParticipantColumns();
+  const columns = getParticipantColumns((url) => {
+    setPreviewImage(url);
+    setPreviewOpen(true);
+  });
 
   if (error) return <p className='text-red-400 p-8'>{error}</p>;
 
@@ -177,7 +183,7 @@ const Participant = () => {
         <TablePanel
           columns={columns}
           data={participants as unknown as Record<string, unknown>[]}
-          loading={loading}
+          loading={loading || !initialized}
           pagination={
             meta
               ? {
@@ -198,9 +204,6 @@ const Participant = () => {
               onDocuments={handleDocumentsRequest}
               onDelete={handleDeleteRequest}
               onEmailLogs={handleEmailLogsRequest}
-              lastEmailStatus={
-                emailStatusMap[(row as unknown as ParticipantTableItem).id]
-              }
             />
           )}
         </TablePanel>
@@ -240,6 +243,12 @@ const Participant = () => {
           setSelectedEmailLogsParticipant(null);
         }}
         participant={selectedEmailLogsParticipant}
+      />
+
+      <ModalImage
+        previewOpen={previewOpen}
+        setPreviewOpen={setPreviewOpen}
+        previewImage={previewImage}
       />
 
       <Toaster position='bottom-right' richColors theme='dark' />

@@ -18,6 +18,7 @@ export interface ParticipantTableItem {
   cod_university: string;
   university_type: 'Referido' | 'General';
   university_name: string;
+  university_abbreviation: string;
   cod_country: number;
   discapacidad: string;
   alergia: string;
@@ -54,7 +55,7 @@ export type ParticipantTableResponse = PaginatedResponse<ParticipantTableItem>;
 
 // ── Opciones embebidas en la respuesta de la tabla ─────────────────────
 
-export type ParticipantListOption = { id: number; name: string };
+export type ParticipantListOption = { id: number; name: string; is_default?: boolean };
 
 export interface ParticipantListResponse {
   count: number;

@@ -21,6 +21,7 @@ import AvailableSlot from './pages/panel/AvailableSlot';
 import Participant from './pages/panel/Participant';
 import PartnerUniversity from './pages/panel/PartnerUniversity';
 import DynamicCode from './pages/panel/DynamicCode';
+import Delegates from './pages/panel/Delegates';
 
 import './App.css';
 
@@ -49,6 +50,7 @@ function App() {
           <Route path='/participant' element={<Participant />} />
           <Route path='/partner-university' element={<PartnerUniversity />} />
           <Route path='/dynamic-code' element={<DynamicCode />} />
+          <Route path='/delegate' element={<Delegates />} />
 
           <Route path='/change-password' element={<ChangePassword />} />
         </Route>

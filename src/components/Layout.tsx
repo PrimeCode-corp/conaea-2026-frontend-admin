@@ -10,7 +10,7 @@ export default function Layout({ children }: { children: React.ReactNode }) {
           <SidebarTrigger className='text-slate-200 cursor-pointer border border-white/10 hover:bg-[#fbba0e] hover:text-black transition' />
         </div>
         <div
-          className='flex-1 overflow-y-auto p-6'
+          className='flex-1 overflow-y-auto p-8'
           style={{ fontFamily: "'DM Sans', 'Segoe UI', sans-serif" }}
         >
           {children}

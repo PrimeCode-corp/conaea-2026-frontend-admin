@@ -1,5 +1,5 @@
 interface Field {
-  kind: 'input' | 'select' | 'file' | 'photo' | 'input-checkbox' | 'university-select';
+  kind: 'input' | 'select' | 'file' | 'photo' | 'input-checkbox' | 'university-select' | 'search-select';
   id?: string;
   label?: string;
   type?: string;

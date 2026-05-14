@@ -25,6 +25,7 @@ import PartnerUniversityTableButtons from './PartnerUniversityTableButtons';
 
 import ModalDelete from '../components/modals/ModalDelete';
 import ModalForm from '../components/modals/ModalForm';
+import ModalDelegates from './modals/ModalDelegates';
 import PartnerUniversityFilters from './PartnerUniversityFilters';
 
 import { columns } from './columns';
@@ -81,6 +82,17 @@ const PartnerUniversity = () => {
   const [editErrors, setEditErrors] = useState<FormErrors>({});
 
   const [editLoading, setEditLoading] = useState(false);
+
+  // --- Modal Delegados ---
+  const [delegatesOpen, setDelegatesOpen] = useState(false);
+  const [delegatesUniversityId, setDelegatesUniversityId] = useState<number | null>(null);
+  const [delegatesUniversityName, setDelegatesUniversityName] = useState('');
+
+  const handleViewDelegates = (row: Row) => {
+    setDelegatesUniversityId(row.id as number);
+    setDelegatesUniversityName(row.name as string);
+    setDelegatesOpen(true);
+  };
 
   // --- Filtros ---
   const [selectedQuotaTypeId, setSelectedQuotaTypeId] = useState<
@@ -252,6 +264,7 @@ const PartnerUniversity = () => {
               row={row as PartnerUniversities}
               onEdit={handleEditRequest}
               onDelete={handleDeleteRequest}
+              onViewDelegates={handleViewDelegates}
             />
           )}
         </TablePanel>
@@ -261,6 +274,14 @@ const PartnerUniversity = () => {
           elements={meta?.count ?? universities.length}
         /> */}
       </div>
+
+      {/* Modal Delegados */}
+      <ModalDelegates
+        open={delegatesOpen}
+        onClose={() => setDelegatesOpen(false)}
+        universityId={delegatesUniversityId}
+        universityName={delegatesUniversityName}
+      />
 
       {/* Modal Eliminar */}
       <ModalDelete

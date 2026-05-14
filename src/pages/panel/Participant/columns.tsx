@@ -1,4 +1,4 @@
-export const getParticipantColumns = () => [
+export const getParticipantColumns = (onPhotoClick: (url: string) => void) => [
   {
     id: 1,
     label: 'E',
@@ -7,7 +7,7 @@ export const getParticipantColumns = () => [
       <div className='relative group w-fit'>
         <div
           className={[
-            'w-3 h-3 rounded-[2px] cursor-pointer',
+            'w-3 h-3 rounded-xs cursor-pointer',
             value ? 'bg-green-500' : 'bg-red-500',
           ].join(' ')}
         />
@@ -19,6 +19,22 @@ export const getParticipantColumns = () => [
   },
   {
     id: 2,
+    label: 'Foto',
+    key: 'photograph',
+    render: (value: unknown) =>
+      value ? (
+        <img
+          src={value as string}
+          alt='foto'
+          onClick={() => onPhotoClick(value as string)}
+          className='w-10 h-10 rounded-sm object-cover object-top border border-white/10 cursor-pointer hover:scale-110 transition'
+        />
+      ) : (
+        <span className='text-slate-500 text-xs'>Sin foto</span>
+      ),
+  },
+  {
+    id: 3,
     label: 'Documento',
     key: 'identity_document',
     render: (_: unknown, row: unknown) => {
@@ -29,14 +45,21 @@ export const getParticipantColumns = () => [
         : '---';
 
       return (
-        <span className='text-slate-200 text-xs'>
-          {documentTypeShort} - {r.identity_document ?? 'Sin documento'}
-        </span>
+        <div>
+          <p className='text-slate-200 text-sm leading-tight font-mono'>
+            {r.identity_document || '—'}
+          </p>
+          {documentTypeShort && (
+            <p className='text-slate-500 text-xs leading-tight mt-0.5'>
+              {documentTypeShort}
+            </p>
+          )}
+        </div>
       );
     },
   },
   {
-    id: 3,
+    id: 4,
     label: 'Nombre',
     key: 'full_name',
     render: (_: unknown, row: unknown) => {
@@ -53,65 +76,75 @@ export const getParticipantColumns = () => [
       );
     },
   },
-  // {
-  //   id: 4,
-  //   label: 'Tipo',
-  //   key: 'university_type',
-  //   render: (value: unknown) => (
-  //     <span
-  //       className={[
-  //         'text-xs font-normal px-2 py-1 rounded-lg text-white',
-  //         value === 'Referido' ? 'bg-green-500/40 ' : 'bg-blue-500/40',
-  //       ].join(' ')}
-  //     >
-  //       {value as string}
-  //     </span>
-  //   ),
-  // },
   {
-    id: 4,
-    label: 'Universidad',
+    id: 5,
+    label: 'Institución',
     key: 'university_name',
-    render: (value: unknown) => {
-      const name = !value || value === 0 || value === '0' ? '' : String(value);
-
-      const cleanedName = name
+    render: (value: unknown, row: unknown) => {
+      const r = row as {
+        university_name?: string;
+        university_abbreviation?: string;
+        quota_type?: string;
+      };
+      const raw = !value || value === 0 || value === '0' ? '' : String(value);
+      const cleanedName = raw
         .replace(/\buniversidad\b/gi, '')
         .replace(/\s{2,}/g, ' ')
         .trim();
 
+      const quotaType = r.quota_type || '';
+      const code = r.university_abbreviation || '';
+
+      if (!cleanedName && !code) {
+        return <span className='text-slate-500 text-sm'>—</span>;
+      }
+
       return (
-        <div className='max-w-48'>
-          <span className='text-slate-200 text-xs text-wrap'>
-            {cleanedName.toUpperCase() || '—'}
-          </span>
+        <div>
+          <p className='text-slate-200 text-sm leading-tight'>
+            <span className=' font-mono'>{code || '—'}</span> -{' '}
+            {quotaType || '—'}
+          </p>
+          {cleanedName && (
+            <p className='text-slate-500 text-xs leading-tight mt-0.5'>
+              {cleanedName}
+            </p>
+          )}
         </div>
       );
     },
   },
-  { id: 5, label: 'Categoría', key: 'quota_type' },
   {
     id: 6,
-    label: 'Correo',
+    label: 'Contacto',
     key: 'email',
-    render: (value: unknown) => {
-      const email = (value as string) || '';
+    render: (value: unknown, row: unknown) => {
+      const r = row as {
+        email?: string;
+        cellphone?: string;
+      };
 
-      return <span className='text-slate-200 text-xs'>{email || '—'}</span>;
-    },
-  },
-  {
-    id: 7,
-    label: 'Celular',
-    key: 'cellphone',
-    render: (value: unknown) => {
-      const phone = (value as string) || '';
+      const email =
+        !value || value === 0 || value === '0' ? '' : String(value).trim();
 
-      // Inserta un espacio después del código de país si no existe
-      const formattedPhone = phone.replace(/^(\(\+\d+\))(\d+)/, '$1 $2');
+      const cellphone = r.cellphone || '';
+
+      if (!email && !cellphone) {
+        return <span className='text-slate-500 text-sm'>—</span>;
+      }
+
+      const formattedPhone = cellphone.replace(/^(\(\+\d+\))(\d+)/, '$1 $2');
 
       return (
-        <span className='text-slate-200 text-xs'>{formattedPhone || '—'}</span>
+        <div>
+          <p className='text-slate-200 text-sm leading-tight'>{email || '—'}</p>
+
+          {formattedPhone && (
+            <p className='text-slate-500 text-xs leading-tight mt-0.5'>
+              {formattedPhone}
+            </p>
+          )}
+        </div>
       );
     },
   },

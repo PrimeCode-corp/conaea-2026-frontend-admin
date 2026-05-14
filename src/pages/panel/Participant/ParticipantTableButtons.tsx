@@ -11,15 +11,7 @@ interface ParticipantTableButtonsProps {
   onDelete?: (row: ParticipantTableItem) => void;
   onEdit?: (row: ParticipantTableItem) => void;
   onEmailLogs?: (row: ParticipantTableItem) => void;
-  lastEmailStatus?: 'sent' | 'failed' | 'pending' | 'disabled' | null;
 }
-
-const emailStatusClass: Record<string, string> = {
-  sent: 'text-green-400 hover:bg-green-500/10 hover:text-green-300',
-  failed: 'text-red-400 hover:bg-red-500/10 hover:text-red-300',
-  pending: 'text-yellow-400 hover:bg-yellow-500/10 hover:text-yellow-300',
-  disabled: 'text-slate-600 hover:bg-white/5 hover:text-slate-400',
-};
 
 const ParticipantTableButtons = ({
   row,
@@ -27,7 +19,6 @@ const ParticipantTableButtons = ({
   onDelete,
   onEdit,
   onEmailLogs,
-  lastEmailStatus,
 }: ParticipantTableButtonsProps) => {
   const { toggleRegistrationValidation } = useParticipantStore();
   const [validating, setValidating] = useState(false);
@@ -111,12 +102,7 @@ const ParticipantTableButtons = ({
       <Button
         size='sm'
         variant='ghost'
-        className={[
-          'h-8 w-8 p-0 transition cursor-pointer',
-          lastEmailStatus
-            ? emailStatusClass[lastEmailStatus]
-            : 'text-slate-400 hover:bg-white/5 hover:text-slate-200',
-        ].join(' ')}
+        className='h-8 w-8 p-0 transition cursor-pointer text-slate-400 hover:bg-blue-500/10 hover:text-blue-400'
         onClick={() => onEmailLogs?.(row)}
       >
         <Mail className='h-3.5 w-3.5' />
