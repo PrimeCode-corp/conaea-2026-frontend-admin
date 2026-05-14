@@ -1,4 +1,4 @@
-import { Link } from 'react-router-dom';
+import { Link, NavLink, useLocation, matchPath } from 'react-router-dom';
 
 import {
   Sidebar,
@@ -32,6 +32,12 @@ import { navGroups } from './elements';
 
 const AppSidebar = () => {
   const { user, logout } = useAuthStore();
+  const { pathname } = useLocation();
+
+  const isActive = (path: string) =>
+    path === '/'
+      ? pathname === '/'
+      : !!matchPath({ path, end: false }, pathname);
 
   const formatName = (first: string, surname: string) => {
     const firstName = first.trim().split(' ')[0]; // solo el primer nombre
@@ -73,12 +79,17 @@ const AppSidebar = () => {
             <SidebarMenu>
               {group.items.map((item) => (
                 <SidebarMenuItem key={item.path}>
-                  <Link to={item.path}>
-                    <SidebarMenuButton className='cursor-pointer hover:bg-[#fbba0e]/90 transition'>
+                  <SidebarMenuButton
+                    asChild
+                    isActive={isActive(item.path)}
+                    tooltip={item.label}
+                    className='cursor-pointer transition hover:bg-[#fbba0e]/90 hover:text-black data-[active=true]:bg-[#fbba0e]/10 data-[active=true]:text-[#fbba0e] data-[active=true]:border-l-2 data-[active=true]:border-[#fbba0e] data-[active=true]:pl-1.5 rounded-bl-none rounded-tl-none'
+                  >
+                    <NavLink to={item.path}>
                       <item.icon className='w-4 h-4' />
                       <span>{item.label}</span>
-                    </SidebarMenuButton>
-                  </Link>
+                    </NavLink>
+                  </SidebarMenuButton>
                 </SidebarMenuItem>
               ))}
             </SidebarMenu>

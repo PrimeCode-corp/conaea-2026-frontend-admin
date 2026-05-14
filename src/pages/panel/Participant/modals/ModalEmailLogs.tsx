@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import { useEffect, useState } from 'react';
 import {
   Sheet,
   SheetContent,
@@ -10,9 +10,7 @@ import {
   Mail,
   CheckCircle2,
   XCircle,
-  Clock,
   AlertCircle,
-  MinusCircle,
   Inbox,
 } from 'lucide-react';
 import type { ParticipantTableItem } from '@/types/participants.types';
@@ -31,14 +29,9 @@ const STATUS_FILTERS: { value: StatusFilter; label: string }[] = [
   { value: '', label: 'Todos' },
   { value: 'sent', label: 'Enviados' },
   { value: 'failed', label: 'Fallidos' },
-  { value: 'pending', label: 'Pendientes' },
-  { value: 'disabled', label: 'Desactivados' },
 ];
 
-const statusConfig: Record<
-  string,
-  { icon: React.ElementType; color: string; bg: string; border: string; label: string }
-> = {
+const statusConfig = {
   sent: {
     icon: CheckCircle2,
     color: 'text-green-400',
@@ -53,28 +46,6 @@ const statusConfig: Record<
     border: 'border-red-400/20',
     label: 'Fallido',
   },
-  pending: {
-    icon: Clock,
-    color: 'text-yellow-400',
-    bg: 'bg-yellow-400/10',
-    border: 'border-yellow-400/20',
-    label: 'Pendiente',
-  },
-  disabled: {
-    icon: MinusCircle,
-    color: 'text-slate-500',
-    bg: 'bg-white/5',
-    border: 'border-white/10',
-    label: 'Desactivado',
-  },
-};
-
-const defaultStatusConfig = {
-  icon: AlertCircle,
-  color: 'text-slate-400',
-  bg: 'bg-white/5',
-  border: 'border-white/10',
-  label: 'Desconocido',
 };
 
 const formatDate = (iso: string | null) => {
@@ -100,7 +71,7 @@ const SkeletonRow = () => (
 );
 
 const EmailLogItem = ({ log }: { log: EmailLog }) => {
-  const cfg = statusConfig[log.status] ?? defaultStatusConfig;
+  const cfg = log.status === 'sent' ? statusConfig.sent : statusConfig.failed;
   const Icon = cfg.icon;
 
   return (
@@ -149,14 +120,22 @@ const ModalEmailLogs = ({ open, onClose, participant }: Props) => {
     if (!open || !participant) return;
     setLoading(true);
     setLogs([]);
+    // "Fallidos" trae todo del backend y excluye los enviados en cliente,
+    // para incluir disabled, pending y cualquier otro estado no-sent.
+    const apiStatus = statusFilter === 'failed' ? undefined : (statusFilter || undefined);
+
     emailLogService
       .getByParticipant(participant.id, {
-        status: statusFilter || undefined,
+        status: apiStatus,
         page_size: 50,
       })
       .then((data) => {
-        setLogs(data.results);
-        setCount(data.count);
+        const results =
+          statusFilter === 'failed'
+            ? data.results.filter((log) => log.status !== 'sent')
+            : data.results;
+        setLogs(results);
+        setCount(results.length);
       })
       .catch(() => setLogs([]))
       .finally(() => setLoading(false));

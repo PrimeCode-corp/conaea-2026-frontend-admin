@@ -17,12 +17,7 @@ import {
 } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { useEffect } from 'react';
-import { useParticipantStore } from '@/store/useParticipantStore';
-import { usePreSaleStore } from '@/store/usePreSaleStore';
-import { useAvailableSlotStore } from '@/store/useAvailableSlotStore';
-import { useDynamicCodeStore } from '@/store/useDynamicCodeStore';
-import { useSpeakerStore } from '@/store/useSpeakerStore';
-import { useDayStore } from '@/store/useDayStore';
+import { useDashboardStore } from '@/store/useDashboardStore';
 
 const modules = [
   {
@@ -204,55 +199,14 @@ const ProgressBar = ({ label, value, total, color }: ProgressBarProps) => {
 
 // ── Home ───────────────────────────────────────────────────────────────
 const AdminHome = () => {
-  const {
-    participants,
-    meta,
-    fetchParticipants,
-    loading: loadingP,
-    stats,
-    fetchStats,
-  } = useParticipantStore();
-  const { preSales, fetchPreSales, loading: loadingPS } = usePreSaleStore();
-  const {
-    availableSlots,
-    fetchAvailableSlots,
-    loading: loadingAS,
-  } = useAvailableSlotStore();
-  const {
-    codes,
-    meta: codeMeta,
-    fetchCodes,
-    loading: loadingC,
-  } = useDynamicCodeStore();
-  const { speakers, fetchSpeakers } = useSpeakerStore();
-  const { days, fetchDays } = useDayStore();
+  const { data, loading, fetchDashboard } = useDashboardStore();
 
   useEffect(() => {
-    fetchParticipants(1);
-    fetchPreSales();
-    fetchAvailableSlots();
-    fetchCodes(1);
-    fetchSpeakers();
-    fetchDays();
-    fetchStats();
+    fetchDashboard();
   }, []);
 
-  // ── Métricas calculadas ──────────────────────────────────────────────
-  const totalParticipants = meta?.count ?? 0;
-  const validatedParticipants = participants.filter(
-    (p) => p.is_validated,
-  ).length;
-
-  const totalSlots = availableSlots.reduce(
-    (acc, s) => acc + (s.amount ?? 0),
-    0,
-  );
-
-  const availableCodes = codes.filter((c) => c.status === 'Disponible').length;
-  const usedCodes = codes.filter((c) => c.status !== 'Disponible').length;
-  const totalCodes = codeMeta?.count ?? codes.length;
-
-  const activePreSale = preSales.find((p) => p.is_active);
+  const p = data?.participants;
+  const activePreSale = data?.active_pre_sale;
 
   return (
     <div className='bg-[#111] min-h-screen px-4 sm:px-6 md:px-8 py-8 sm:py-10 space-y-6 sm:space-y-10'>
@@ -275,41 +229,43 @@ const AdminHome = () => {
       <div className='grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4'>
         <StatCard
           label='Participantes'
-          value={totalParticipants}
-          sub={`${validatedParticipants} validados`}
+          value={p?.total ?? 0}
+          sub={`${p?.validated ?? 0} validados`}
           icon={Users}
           color='text-purple-400'
           bg='bg-purple-400/10'
           border='border-purple-400/20'
-          loading={loadingP}
+          loading={loading}
         />
         <StatCard
           label='Cupos totales'
-          value={totalSlots}
-          sub={`${availableSlots.length} categorías`}
+          value={data?.slots.total ?? 0}
+          sub={`${data?.slots.categories ?? 0} categorías`}
           icon={Ticket}
           color='text-pink-400'
           bg='bg-pink-400/10'
           border='border-pink-400/20'
-          loading={loadingAS}
+          loading={loading}
         />
         <StatCard
           label='Speakers'
-          value={speakers.length}
+          value={data?.speakers ?? 0}
           sub='registrados'
           icon={Mic2}
           color='text-green-400'
           bg='bg-green-400/10'
           border='border-green-400/20'
+          loading={loading}
         />
         <StatCard
           label='Días del congreso'
-          value={days.length}
+          value={data?.days ?? 0}
           sub='programados'
           icon={CalendarDays}
           color='text-[#fbba0e]'
           bg='bg-[#fbba0e]/10'
           border='border-[#fbba0e]/20'
+          loading={loading}
         />
       </div>
 
@@ -323,7 +279,7 @@ const AdminHome = () => {
               Estado de validaciones
             </p>
           </div>
-          {loadingP ? (
+          {loading ? (
             <div className='space-y-3'>
               {[1, 2, 3].map((i) => (
                 <div key={i} className='h-8 rounded bg-white/5 animate-pulse' />
@@ -333,18 +289,18 @@ const AdminHome = () => {
             <div className='space-y-3'>
               <ProgressBar
                 label='Validados'
-                value={stats?.validated ?? 0}
-                total={stats?.total ?? 0}
+                value={p?.validated ?? 0}
+                total={p?.total ?? 0}
                 color='bg-green-500'
               />
               <ProgressBar
                 label='Pendientes'
-                value={stats?.pending ?? 0}
-                total={stats?.total ?? 0}
+                value={p?.pending ?? 0}
+                total={p?.total ?? 0}
                 color='bg-yellow-500'
               />
               <div className='pt-2 flex items-center justify-between text-xs text-slate-500'>
-                <span>Total: {stats?.total ?? 0} participantes</span>
+                <span>Total: {p?.total ?? 0} participantes</span>
                 <Link
                   to='/participant'
                   className='text-[#fbba0e] hover:underline font-semibold'
@@ -364,7 +320,7 @@ const AdminHome = () => {
               Códigos generales
             </p>
           </div>
-          {loadingC ? (
+          {loading ? (
             <div className='space-y-3'>
               {[1, 2].map((i) => (
                 <div
@@ -381,7 +337,7 @@ const AdminHome = () => {
                   <span className='text-xs text-slate-400'>Disponibles</span>
                 </div>
                 <span className='text-lg font-black text-green-400'>
-                  {availableCodes}
+                  {data?.codes.available ?? 0}
                 </span>
               </div>
               <div className='flex items-center justify-between p-3 rounded-xl bg-red-500/5 border border-red-500/20'>
@@ -390,13 +346,13 @@ const AdminHome = () => {
                   <span className='text-xs text-slate-400'>Usados</span>
                 </div>
                 <span className='text-lg font-black text-red-400'>
-                  {usedCodes}
+                  {data?.codes.used ?? 0}
                 </span>
               </div>
               <ProgressBar
                 label='Uso total'
-                value={usedCodes}
-                total={totalCodes}
+                value={data?.codes.used ?? 0}
+                total={data?.codes.total ?? 0}
                 color='bg-rose-500'
               />
             </div>
@@ -409,7 +365,7 @@ const AdminHome = () => {
             <Clock className='w-4 h-4 text-teal-400' />
             <p className='text-sm font-bold text-slate-200'>Preventa activa</p>
           </div>
-          {loadingPS ? (
+          {loading ? (
             <div className='h-24 rounded bg-white/5 animate-pulse' />
           ) : activePreSale ? (
             <div className='space-y-3'>
@@ -419,9 +375,7 @@ const AdminHome = () => {
                 </p>
                 <p className='text-xs text-slate-500'>
                   Inicio:{' '}
-                  {new Date(activePreSale.start_date).toLocaleDateString(
-                    'es-PE',
-                  )}
+                  {new Date(activePreSale.start_date).toLocaleDateString('es-PE')}
                 </p>
                 <p className='text-xs text-slate-500'>
                   Fin:{' '}
@@ -429,14 +383,12 @@ const AdminHome = () => {
                 </p>
               </div>
               <div className='space-y-2'>
-                {availableSlots.slice(0, 3).map((slot) => (
+                {activePreSale.slots.map((slot, i) => (
                   <div
-                    key={slot.id}
+                    key={i}
                     className='flex items-center justify-between text-xs'
                   >
-                    <span className='text-slate-400'>
-                      {slot.quota_type?.name ?? `Cupo ${slot.id}`}
-                    </span>
+                    <span className='text-slate-400'>{slot.quota_type__name}</span>
                     <span className='text-slate-200 font-semibold'>
                       {slot.amount} cupos
                     </span>
