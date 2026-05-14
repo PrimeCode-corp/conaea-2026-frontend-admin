@@ -25,19 +25,23 @@ const ModalEditParticipant = ({
   const [errors, setErrors] = useState<Partial<Record<string, string>>>({});
   const [form, setForm] = useState<FormState>({});
 
-  // Precarga los datos del participante al abrir el modal
   useEffect(() => {
     if (participant) {
       setForm({
-        first_name: participant.full_name.split(' ')[0] ?? '',
-        paternal_surname: participant.full_name.split(' ')[1] ?? '',
-        maternal_surname: participant.full_name.split(' ')[2] ?? '',
+        first_name: participant.first_name ?? '',
+        paternal_surname: participant.paternal_surname ?? '',
+        maternal_surname: participant.maternal_surname ?? '',
         document_type: participant.document_type,
         identity_document: participant.identity_document,
-        birthday: '', // no viene en el table serializer, se deja vacío
+        birthday: participant.birthday ?? '',
         cellphone: participant.cellphone,
         email: participant.email,
-        academic_cycle: '',
+        academic_cycle: participant.academic_cycle ?? '',
+        cod_university: participant.cod_university ?? '',
+        university_name: participant.university_name ?? '',
+        university_type: participant.university_type ?? '',
+        discapacidad: participant.discapacidad ?? '',
+        alergia: participant.alergia ?? '',
         photograph: null,
       });
       setErrors({});
@@ -75,6 +79,8 @@ const ModalEditParticipant = ({
       'cellphone',
       'email',
       'academic_cycle',
+      'cod_university',
+      'university_type',
     ];
 
     textFields.forEach((key) => {
@@ -83,6 +89,10 @@ const ModalEditParticipant = ({
         formData.append(key, String(value));
       }
     });
+
+    // Siempre se envían para permitir el soft-delete (enviar "" desactiva el registro)
+    formData.append('discapacidad', String(form.discapacidad ?? ''));
+    formData.append('alergia', String(form.alergia ?? ''));
 
     if (form.photograph instanceof File) {
       formData.append('photograph', form.photograph);

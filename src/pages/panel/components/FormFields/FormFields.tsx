@@ -70,6 +70,35 @@ const FormFields = <T extends Record<string, unknown>>({
           onValueChange={(val) => field.id && onValueChange?.(field.id, val)}
           options={field.options ?? []}
           placeholder={field.placeholder}
+          disabled={field.disabled}
+          error={error}
+        />
+      );
+    }
+
+    if (field.kind === 'university-select') {
+      return (
+        <InputController
+          kind='university-select'
+          label={field.label}
+          value={field.id ? ((form[field.id] as string) ?? '') : ''}
+          initialName={(form['university_name'] as string) ?? ''}
+          onValueChange={(code) => field.id && onValueChange?.(field.id, code)}
+          disabled={field.disabled}
+          error={error}
+        />
+      );
+    }
+
+    if (field.kind === 'input-checkbox') {
+      return (
+        <InputController
+          kind='input-checkbox'
+          id={field.id!}
+          label={field.label}
+          value={field.id ? ((form[field.id] as string) ?? '') : ''}
+          onValueChange={(val) => field.id && onValueChange?.(field.id, val)}
+          placeholder={field.placeholder}
           error={error}
         />
       );

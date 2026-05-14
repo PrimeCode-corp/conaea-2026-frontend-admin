@@ -48,4 +48,12 @@ export const partnerUniversityService = {
     api
       .get(`/participants/partner-universities/${id}/delegates/`)
       .then((res) => res.data),
+
+  search: (query?: string) =>
+    api
+      .get<{ code: string; name: string; abbreviation: string }[]>(
+        '/participants/partner-universities/select/',
+        { params: query ? { search: query } : {} },
+      )
+      .then((res) => res.data),
 };

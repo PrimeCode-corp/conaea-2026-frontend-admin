@@ -19,6 +19,7 @@ interface Props {
   value: string;
   onValueChange: (value: string) => void;
   options: Option[];
+  disabled?: boolean;
   error?: string;
 }
 
@@ -28,6 +29,7 @@ const FormSelect = ({
   value,
   onValueChange,
   options,
+  disabled,
   error,
 }: Props) => {
   return (
@@ -39,8 +41,8 @@ const FormSelect = ({
         </Label>
       )}
 
-      <Select value={value} onValueChange={onValueChange}>
-        <SelectTrigger className='bg-[#111] border-white/10 text-slate-200 focus:ring-[#fbba0e] focus:ring-offset-0'>
+      <Select value={value} onValueChange={onValueChange} disabled={disabled}>
+        <SelectTrigger className='bg-[#111] border-white/10 text-slate-200 focus:ring-[#fbba0e] focus:ring-offset-0 disabled:opacity-50 disabled:cursor-not-allowed'>
           <SelectValue placeholder={placeholder} />
         </SelectTrigger>
 

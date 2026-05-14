@@ -5,14 +5,23 @@ import type { Vouchers } from './transaction.types';
 
 export interface ParticipantTableItem {
   id: number;
+  first_name: string;
+  paternal_surname: string;
+  maternal_surname: string;
+  full_name: string;
   document_type: 'DNI' | 'PASAPORTE';
   identity_document: string;
-  photograph: string;
-  full_name: string;
-  university_type: 'Referido' | 'General';
-  university_name: string;
+  birthday: string;
   cellphone: string;
   email: string;
+  academic_cycle: string;
+  cod_university: string;
+  university_type: 'Referido' | 'General';
+  university_name: string;
+  cod_country: number;
+  discapacidad: string;
+  alergia: string;
+  photograph: string;
   quota_type: string;
   pre_sale: string;
   vouchers: Vouchers[];

@@ -61,12 +61,8 @@ export const useParticipantStore = create<ParticipantStore>((set, get) => ({
   },
 
   updateParticipant: async (id, formData) => {
-    try {
-      await participantService.update(id, formData);
-      await get().invalidate();
-    } catch {
-      throw new Error('Error al actualizar el participante');
-    }
+    await participantService.update(id, formData);
+    await get().invalidate();
   },
 
   removeParticipant: async (id: number) => {

@@ -46,20 +46,22 @@ const ModalForm = <T extends Record<string, unknown>>({
 }: ModalFormProps<T>) => {
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className='bg-[#1a1a1a] border border-white/10 text-slate-200 sm:max-w-md max-h-[80vh] overflow-y-auto'>
+      <DialogContent className='bg-[#1a1a1a] border border-white/10 text-slate-200 sm:max-w-md max-h-[90vh] flex flex-col'>
         <ModalHeader title={title} description={description} icon={icon} />
 
-        <FormFields
-          fields={fields}
-          form={form}
-          errors={errors}
-          onChange={onChange}
-          onFile={onFile}
-          currentPhoto={currentPhoto}
-          onValueChange={onValueChange}
-        />
+        <div className='overflow-y-auto flex-1 min-h-0 px-1'>
+          <FormFields
+            fields={fields}
+            form={form}
+            errors={errors}
+            onChange={onChange}
+            onFile={onFile}
+            currentPhoto={currentPhoto}
+            onValueChange={onValueChange}
+          />
+        </div>
 
-        <DialogFooter className='gap-2 pt-2'>
+        <DialogFooter className='gap-2 pt-2 shrink-0'>
           {mode === 'create' ? (
             <DialogClose asChild>
               <Button

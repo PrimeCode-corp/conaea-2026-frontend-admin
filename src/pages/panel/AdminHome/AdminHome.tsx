@@ -141,31 +141,33 @@ const StatCard = ({
 }: StatCardProps) => (
   <div
     className={[
-      'flex flex-col gap-3 p-5 rounded-2xl border bg-[#1a1a1a]',
+      'flex flex-col gap-3 p-4 sm:p-5 rounded-2xl border bg-[#1a1a1a]',
       border,
     ].join(' ')}
   >
-    <div className='flex items-center justify-between'>
-      <p className='text-xs font-semibold uppercase tracking-wider text-slate-500'>
+    <div
+      className={[
+        'w-8 h-8 rounded-lg flex items-center justify-center shrink-0',
+        bg,
+      ].join(' ')}
+    >
+      <Icon className={`w-4 h-4 ${color}`} />
+    </div>
+
+    {loading ? (
+      <div className='h-7 w-20 rounded bg-white/5 animate-pulse' />
+    ) : (
+      <p className='text-2xl font-black text-slate-100 leading-none'>{value}</p>
+    )}
+
+    <div>
+      <p className='text-[10px] sm:text-xs font-semibold uppercase tracking-wide text-slate-500 leading-tight'>
         {label}
       </p>
-      <div
-        className={[
-          'w-8 h-8 rounded-lg flex items-center justify-center',
-          bg,
-        ].join(' ')}
-      >
-        <Icon className={`w-4 h-4 ${color}`} />
-      </div>
+      {!loading && sub && (
+        <p className='text-[10px] sm:text-xs text-slate-600 mt-0.5'>{sub}</p>
+      )}
     </div>
-    {loading ? (
-      <div className='h-8 w-24 rounded bg-white/5 animate-pulse' />
-    ) : (
-      <>
-        <p className='text-3xl font-black text-slate-100'>{value}</p>
-        {sub && <p className='text-xs text-slate-500'>{sub}</p>}
-      </>
-    )}
   </div>
 );
 
@@ -253,7 +255,7 @@ const AdminHome = () => {
   const activePreSale = preSales.find((p) => p.is_active);
 
   return (
-    <div className='bg-[#111] min-h-screen px-4 sm:px-8 py-10 space-y-10'>
+    <div className='bg-[#111] min-h-screen px-4 sm:px-6 md:px-8 py-8 sm:py-10 space-y-6 sm:space-y-10'>
       {/* ── Bienvenida ─────────────────────────────────────────────── */}
       <div>
         <p className='text-xs font-bold tracking-[0.3em] uppercase text-[#fbba0e] mb-2'>
@@ -270,7 +272,7 @@ const AdminHome = () => {
       </div>
 
       {/* ── Stats ──────────────────────────────────────────────────── */}
-      <div className='grid grid-cols-2 lg:grid-cols-4 gap-4'>
+      <div className='grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4'>
         <StatCard
           label='Participantes'
           value={totalParticipants}
@@ -312,7 +314,7 @@ const AdminHome = () => {
       </div>
 
       {/* ── Fila de paneles ────────────────────────────────────────── */}
-      <div className='grid grid-cols-1 lg:grid-cols-3 gap-4'>
+      <div className='grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4'>
         {/* Validaciones */}
         <div className='rounded-2xl border border-white/10 bg-[#1a1a1a] p-5 space-y-4'>
           <div className='flex items-center gap-2'>
@@ -462,7 +464,7 @@ const AdminHome = () => {
         <p className='text-xs font-bold tracking-[0.2em] uppercase text-slate-500 mb-4'>
           Accesos rápidos
         </p>
-        <div className='grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3'>
+        <div className='grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-3'>
           {modules.map((mod) => {
             const Icon = mod.icon;
             return (
@@ -470,7 +472,7 @@ const AdminHome = () => {
                 key={mod.label}
                 to={mod.href}
                 className={[
-                  'group flex flex-col gap-3 p-4 rounded-2xl border bg-[#1a1a1a] transition-all duration-200',
+                  'group flex flex-col gap-3 p-3 sm:p-4 rounded-2xl border bg-[#1a1a1a] transition-all duration-200',
                   'hover:bg-[#222] hover:-translate-y-0.5 hover:shadow-lg',
                   mod.border,
                 ].join(' ')}
