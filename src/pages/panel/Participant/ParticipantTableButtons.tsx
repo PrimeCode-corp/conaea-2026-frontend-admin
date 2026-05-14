@@ -11,13 +11,14 @@ interface ParticipantTableButtonsProps {
   onDelete?: (row: ParticipantTableItem) => void;
   onEdit?: (row: ParticipantTableItem) => void;
   onEmailLogs?: (row: ParticipantTableItem) => void;
-  lastEmailStatus?: 'sent' | 'failed' | 'pending' | null;
+  lastEmailStatus?: 'sent' | 'failed' | 'pending' | 'disabled' | null;
 }
 
 const emailStatusClass: Record<string, string> = {
   sent: 'text-green-400 hover:bg-green-500/10 hover:text-green-300',
   failed: 'text-red-400 hover:bg-red-500/10 hover:text-red-300',
   pending: 'text-yellow-400 hover:bg-yellow-500/10 hover:text-yellow-300',
+  disabled: 'text-slate-600 hover:bg-white/5 hover:text-slate-400',
 };
 
 const ParticipantTableButtons = ({

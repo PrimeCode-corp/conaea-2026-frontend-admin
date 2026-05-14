@@ -53,7 +53,7 @@ const Participant = () => {
   const [selectedEmailLogsParticipant, setSelectedEmailLogsParticipant] =
     useState<ParticipantTableItem | null>(null);
   const [emailStatusMap, setEmailStatusMap] = useState<
-    Record<number, 'sent' | 'failed' | 'pending' | null>
+    Record<number, 'sent' | 'failed' | 'pending' | 'disabled' | null>
   >({});
 
   // --- Modal Eliminar ---

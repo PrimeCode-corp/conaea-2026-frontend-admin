@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import {
   Sheet,
   SheetContent,
@@ -12,6 +12,7 @@ import {
   XCircle,
   Clock,
   AlertCircle,
+  MinusCircle,
   Inbox,
 } from 'lucide-react';
 import type { ParticipantTableItem } from '@/types/participants.types';
@@ -24,16 +25,20 @@ interface Props {
   participant: ParticipantTableItem | null;
 }
 
-type StatusFilter = '' | 'sent' | 'failed' | 'pending';
+type StatusFilter = '' | 'sent' | 'failed' | 'pending' | 'disabled';
 
 const STATUS_FILTERS: { value: StatusFilter; label: string }[] = [
   { value: '', label: 'Todos' },
   { value: 'sent', label: 'Enviados' },
   { value: 'failed', label: 'Fallidos' },
   { value: 'pending', label: 'Pendientes' },
+  { value: 'disabled', label: 'Desactivados' },
 ];
 
-const statusConfig = {
+const statusConfig: Record<
+  string,
+  { icon: React.ElementType; color: string; bg: string; border: string; label: string }
+> = {
   sent: {
     icon: CheckCircle2,
     color: 'text-green-400',
@@ -55,6 +60,21 @@ const statusConfig = {
     border: 'border-yellow-400/20',
     label: 'Pendiente',
   },
+  disabled: {
+    icon: MinusCircle,
+    color: 'text-slate-500',
+    bg: 'bg-white/5',
+    border: 'border-white/10',
+    label: 'Desactivado',
+  },
+};
+
+const defaultStatusConfig = {
+  icon: AlertCircle,
+  color: 'text-slate-400',
+  bg: 'bg-white/5',
+  border: 'border-white/10',
+  label: 'Desconocido',
 };
 
 const formatDate = (iso: string | null) => {
@@ -80,7 +100,7 @@ const SkeletonRow = () => (
 );
 
 const EmailLogItem = ({ log }: { log: EmailLog }) => {
-  const cfg = statusConfig[log.status];
+  const cfg = statusConfig[log.status] ?? defaultStatusConfig;
   const Icon = cfg.icon;
 
   return (
