@@ -1,9 +1,9 @@
 // services/partnerUniversityService.ts
 import api from '@/lib/axios';
 import type {
-  PaginatedResponse,
   PartnerUniversities,
   PartnerUniversityDetail,
+  PartnerUniversityListResponse,
 } from '@/types/partnerUniversties.types';
 
 type PartnerUniversityPayload = Omit<
@@ -14,9 +14,9 @@ type PartnerUniversityPayload = Omit<
 export const partnerUniversityService = {
   getAll: (page = 1, params?: { search?: string; quota_type_id?: number }) =>
     api
-      .get<
-        PaginatedResponse<PartnerUniversityDetail>
-      >('/participants/partner-universities/', { params: { page, ...params } })
+      .get<PartnerUniversityListResponse>('/participants/partner-universities/', {
+        params: { page, ...params },
+      })
       .then((res) => res.data),
 
   getById: (id: number) =>

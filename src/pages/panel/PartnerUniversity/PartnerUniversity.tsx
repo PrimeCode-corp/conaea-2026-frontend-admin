@@ -6,10 +6,8 @@ import HeaderPanel from '../components/HeaderPanel';
 import TablePanel from '../components/TablePanel';
 // import FooterPanel from '../components/FooterPanel';
 import SearchPanel from '../components/SearchPanel';
-import LoadingControl from '@/components/LoadingControl';
 
 import { usePartnerUniversityStore } from '@/store/usePartnerUniversityStore';
-import { useQuotaTypeStore } from '@/store/useQuotaTypeStore';
 
 import type {
   PartnerUniversities,
@@ -52,6 +50,7 @@ const formToPayload = (
 const PartnerUniversity = () => {
   const {
     universities,
+    quotaTypes,
     loading,
     error,
     fetchUniversities,
@@ -60,8 +59,6 @@ const PartnerUniversity = () => {
     meta,
     page,
   } = usePartnerUniversityStore();
-
-  const { quotaTypes } = useQuotaTypeStore();
 
   const [search, setSearch] = useState('');
 
@@ -149,11 +146,9 @@ const PartnerUniversity = () => {
       setConfirmOpen(false);
       setRowToDelete(null);
       fetchUniversities(1, {
-        // 👈
         search: search || undefined,
         quota_type_id: selectedQuotaTypeId,
       });
-      resetToFirstQuotaType();
     } catch {
       toast.error('Error al eliminar la universidad. Intenta nuevamente.');
     } finally {
@@ -183,11 +178,9 @@ const PartnerUniversity = () => {
       toast.success('Universidad actualizada correctamente.');
       handleEditOpen(false);
       fetchUniversities(1, {
-        // 👈
         search: search || undefined,
         quota_type_id: selectedQuotaTypeId,
       });
-      resetToFirstQuotaType();
     } catch {
       toast.error('Error al actualizar la universidad. Intenta nuevamente.');
     } finally {
@@ -200,12 +193,6 @@ const PartnerUniversity = () => {
     setRowToDelete(null);
   };
 
-  const resetToFirstQuotaType = () => {
-    const firstId = quotaTypes[0]?.id;
-    setSelectedQuotaTypeId(firstId);
-  };
-
-  if (loading) return <LoadingControl />;
   if (error) return <p className='text-red-400 p-8'>{error}</p>;
 
   return (
@@ -222,12 +209,10 @@ const PartnerUniversity = () => {
             <PartnerUniversityActionButtons
               onCreated={() =>
                 fetchUniversities(1, {
-                  // 👈
                   search: search || undefined,
                   quota_type_id: selectedQuotaTypeId,
                 })
               }
-              onFilterChange={resetToFirstQuotaType}
             />
             <PartnerUniversityFilters
               selectedQuotaTypeId={selectedQuotaTypeId}
@@ -244,6 +229,7 @@ const PartnerUniversity = () => {
         <TablePanel
           columns={columns}
           data={universities}
+          loading={loading}
           pagination={
             meta
               ? {

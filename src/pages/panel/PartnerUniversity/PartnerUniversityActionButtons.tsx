@@ -6,7 +6,6 @@ import { Button } from '@/components/ui/button';
 import ModalForm from '../components/modals/ModalForm';
 
 import { usePartnerUniversityStore } from '@/store/usePartnerUniversityStore';
-import { useQuotaTypeStore } from '@/store/useQuotaTypeStore';
 
 import {
   type PartnerUniversityForm,
@@ -33,16 +32,12 @@ const formToPayload = (
 
 interface PartnerUniversityActionButtonsProps {
   onCreated: () => void;
-  onFilterChange: () => void;
 }
 
 const PartnerUniversityActionButtons = ({
   onCreated,
-  onFilterChange,
 }: PartnerUniversityActionButtonsProps) => {
-  const { createUniversity } = usePartnerUniversityStore();
-
-  const { quotaTypes } = useQuotaTypeStore();
+  const { createUniversity, quotaTypes } = usePartnerUniversityStore();
 
   // Modal Crear
   const [createOpen, setCreateOpen] = useState(false);
@@ -71,7 +66,6 @@ const PartnerUniversityActionButtons = ({
       setCreateForm(emptyForm);
       setCreateOpen(false);
       onCreated?.();
-      onFilterChange?.();
     } catch {
       toast.error(
         'Error al crear la universidad asociada. Intenta nuevamente.',

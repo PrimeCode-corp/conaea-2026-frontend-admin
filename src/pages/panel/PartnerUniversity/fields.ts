@@ -1,7 +1,7 @@
 import type { Field } from '../components/FormFields/formFields.types';
-import type { QuotaTypes } from '@/types/quotaTypes.types';
+import type { QuotaTypeOption } from '@/types/partnerUniversties.types';
 
-export const getAvailableSlotFields = (quotaTypes: QuotaTypes[]): Field[] => [
+export const getAvailableSlotFields = (quotaTypes: QuotaTypeOption[]): Field[] => [
   {
     kind: 'select',
     id: 'quota_type',

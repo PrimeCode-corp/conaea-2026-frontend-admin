@@ -24,9 +24,22 @@ export type PartnerUniversityDetail = {
   is_active: boolean;
 };
 
+export type QuotaTypeOption = {
+  id: number;
+  name: string;
+};
+
 export type PaginatedResponse<T> = {
   count: number;
   next: string | null;
   previous: string | null;
   results: T[];
+};
+
+export type PartnerUniversityListResponse = {
+  count: number;
+  next: string | null;
+  previous: string | null;
+  quota_types: QuotaTypeOption[];
+  results: PartnerUniversityDetail[];
 };

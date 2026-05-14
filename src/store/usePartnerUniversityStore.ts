@@ -3,6 +3,7 @@ import { partnerUniversityService } from '@/services/partnerUniversityService';
 import type {
   PartnerUniversities,
   PartnerUniversityDetail,
+  QuotaTypeOption,
 } from '@/types/partnerUniversties.types';
 
 type PartnerUniversityPayload = Omit<
@@ -12,6 +13,7 @@ type PartnerUniversityPayload = Omit<
 
 type PartnerUniversityStore = {
   universities: PartnerUniversityDetail[];
+  quotaTypes: QuotaTypeOption[];
   meta: { count: number; next: string | null; previous: string | null } | null;
   page: number;
   loading: boolean;
@@ -33,6 +35,7 @@ type PartnerUniversityStore = {
 export const usePartnerUniversityStore = create<PartnerUniversityStore>(
   (set, get) => ({
     universities: [],
+    quotaTypes: [],
     meta: null,
     page: 1,
     loading: false,
@@ -47,6 +50,7 @@ export const usePartnerUniversityStore = create<PartnerUniversityStore>(
         const data = await partnerUniversityService.getAll(page, params);
         set({
           universities: data.results,
+          quotaTypes: data.quota_types,
           meta: { count: data.count, next: data.next, previous: data.previous },
           page,
         });
@@ -59,8 +63,7 @@ export const usePartnerUniversityStore = create<PartnerUniversityStore>(
 
     createUniversity: async (payload) => {
       try {
-        await partnerUniversityService.create(payload); // 👈 sin guardar el resultado
-        get().invalidateUniversities();
+        await partnerUniversityService.create(payload);
       } catch {
         throw new Error('Error al crear la universidad');
       }
@@ -68,8 +71,7 @@ export const usePartnerUniversityStore = create<PartnerUniversityStore>(
 
     updateUniversity: async (id, payload) => {
       try {
-        await partnerUniversityService.update(id, payload); // 👈 sin guardar el resultado
-        get().invalidateUniversities();
+        await partnerUniversityService.update(id, payload);
       } catch {
         throw new Error('Error al actualizar la universidad');
       }
@@ -81,7 +83,6 @@ export const usePartnerUniversityStore = create<PartnerUniversityStore>(
         set((state) => ({
           universities: state.universities.filter((u) => u.id !== id),
         }));
-        get().invalidateUniversities();
       } catch {
         throw new Error('Error al eliminar la universidad');
       }

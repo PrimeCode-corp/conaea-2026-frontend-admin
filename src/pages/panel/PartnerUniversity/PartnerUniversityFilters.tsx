@@ -1,4 +1,3 @@
-import { useEffect } from 'react';
 import {
   Select,
   SelectContent,
@@ -6,7 +5,9 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import { useQuotaTypeStore } from '@/store/useQuotaTypeStore';
+import { usePartnerUniversityStore } from '@/store/usePartnerUniversityStore';
+
+const ALL_VALUE = 'all';
 
 interface PartnerUniversityFiltersProps {
   selectedQuotaTypeId: number | undefined;
@@ -17,29 +18,31 @@ const PartnerUniversityFilters = ({
   selectedQuotaTypeId,
   onQuotaTypeChange,
 }: PartnerUniversityFiltersProps) => {
-  const { quotaTypes, fetchQuotaTypes } = useQuotaTypeStore();
+  const { quotaTypes } = usePartnerUniversityStore();
 
-  useEffect(() => {
-    fetchQuotaTypes();
-  }, []);
+  const selectValue =
+    selectedQuotaTypeId === undefined
+      ? ALL_VALUE
+      : selectedQuotaTypeId.toString();
 
-  useEffect(() => {
-    if (quotaTypes.length > 0 && selectedQuotaTypeId === undefined) {
-      onQuotaTypeChange(quotaTypes[0].id);
-    }
-  }, [quotaTypes]);
+  const handleChange = (val: string) => {
+    onQuotaTypeChange(val === ALL_VALUE ? undefined : Number(val));
+  };
 
   return (
     <div className='flex flex-wrap gap-2'>
-      <Select
-        value={selectedQuotaTypeId?.toString()}
-        onValueChange={(val) => onQuotaTypeChange(Number(val))}
-      >
+      <Select value={selectValue} onValueChange={handleChange}>
         <SelectTrigger className='w-44 bg-[#111] border-white/10 text-slate-200 focus:ring-[#fbba0e] focus:ring-offset-0 text-sm'>
           <SelectValue placeholder='Filtrar por tipo de cuota' />
         </SelectTrigger>
         <SelectContent className='bg-[#1a1a1a] border-white/10 text-slate-200'>
-          {quotaTypes.map((type) => (
+          <SelectItem
+            value={ALL_VALUE}
+            className='focus:bg-white/5 focus:text-slate-100'
+          >
+            Universidades
+          </SelectItem>
+          {quotaTypes.filter((type) => type.name !== 'General').map((type) => (
             <SelectItem
               key={type.id}
               value={type.id.toString()}

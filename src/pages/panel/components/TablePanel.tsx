@@ -8,6 +8,7 @@ import {
 } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
+import { Skeleton } from '@/components/ui/skeleton';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
 
 // --- Tipos ---
@@ -33,7 +34,8 @@ interface TablePanelProps {
   columns: Column[];
   data: Row[];
   children?: (row: Row) => React.ReactNode;
-  pagination?: PaginationMeta; // 👈 opcional — si no se pasa, funciona igual que antes
+  pagination?: PaginationMeta;
+  loading?: boolean;
 }
 
 const TablePanel = ({
@@ -41,6 +43,7 @@ const TablePanel = ({
   data,
   children,
   pagination,
+  loading = false,
 }: TablePanelProps) => {
   const totalPages = pagination
     ? Math.ceil(pagination.count / (pagination.pageSize ?? 10))
@@ -81,7 +84,25 @@ const TablePanel = ({
         </TableHeader>
 
         <TableBody>
-          {data.length === 0 ? (
+          {loading ? (
+            Array.from({ length: 5 }).map((_, idx) => (
+              <TableRow key={idx} className='border-white/10'>
+                <TableCell>
+                  <Skeleton className='h-4 w-6 bg-white/10' />
+                </TableCell>
+                {columns.map((col) => (
+                  <TableCell key={col.id}>
+                    <Skeleton className='h-4 w-full bg-white/10' />
+                  </TableCell>
+                ))}
+                {children && (
+                  <TableCell>
+                    <Skeleton className='h-4 w-16 ml-auto bg-white/10' />
+                  </TableCell>
+                )}
+              </TableRow>
+            ))
+          ) : data.length === 0 ? (
             <TableRow className='hover:bg-transparent'>
               <TableCell
                 colSpan={columns.length + 2}
