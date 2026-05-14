@@ -5,7 +5,6 @@ import { Toaster, toast } from 'sonner';
 import HeaderPanel from '../components/HeaderPanel';
 import TablePanel from '../components/TablePanel';
 import SearchPanel from '../components/SearchPanel';
-import LoadingControl from '@/components/LoadingControl';
 import ModalDelete from '../components/modals/ModalDelete';
 
 import { useParticipantStore } from '@/store/useParticipantStore';
@@ -39,7 +38,7 @@ const Participant = () => {
   const [selectedQuotaTypeId, setSelectedQuotaTypeId] = useState<
     number | undefined
   >(undefined);
-  const [selectedUniversityType, setSelectedUniversityType] =
+  const [selectedUniversityCode, setSelectedUniversityCode] =
     useState<string>('');
   const [documentsOpen, setDocumentsOpen] = useState(false);
   const [selectedParticipant, setSelectedParticipant] =
@@ -66,10 +65,7 @@ const Participant = () => {
     pre_sale_id: selectedPreSaleId,
     document_type: selectedDocumentType as 'DNI' | 'PASAPORTE' | undefined,
     quota_type_id: selectedQuotaTypeId,
-    university_type: selectedUniversityType as
-      | 'Referido'
-      | 'General'
-      | undefined,
+    university_code: selectedUniversityCode || undefined,
   };
 
   useEffect(() => {
@@ -83,7 +79,7 @@ const Participant = () => {
     selectedPreSaleId,
     selectedDocumentType,
     selectedQuotaTypeId,
-    selectedUniversityType,
+    selectedUniversityCode,
   ]);
 
   useEffect(() => {
@@ -145,7 +141,6 @@ const Participant = () => {
 
   const columns = getParticipantColumns();
 
-  if (loading) return <LoadingControl />;
   if (error) return <p className='text-red-400 p-8'>{error}</p>;
 
   return (
@@ -162,7 +157,7 @@ const Participant = () => {
             preSaleId={selectedPreSaleId?.toString() ?? ''}
             documentType={selectedDocumentType}
             quotaTypeId={selectedQuotaTypeId?.toString() ?? ''}
-            universityType={selectedUniversityType}
+            universityCode={selectedUniversityCode}
             onPreSaleChange={(val) =>
               setSelectedPreSaleId(val ? Number(val) : undefined)
             }
@@ -170,7 +165,7 @@ const Participant = () => {
             onQuotaTypeChange={(val) =>
               setSelectedQuotaTypeId(val ? Number(val) : undefined)
             }
-            onUniversityTypeChange={setSelectedUniversityType}
+            onUniversityCodeChange={setSelectedUniversityCode}
           />
           <SearchPanel
             search={search}
@@ -182,6 +177,7 @@ const Participant = () => {
         <TablePanel
           columns={columns}
           data={participants as unknown as Record<string, unknown>[]}
+          loading={loading}
           pagination={
             meta
               ? {

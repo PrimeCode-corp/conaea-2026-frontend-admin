@@ -51,3 +51,16 @@ export interface PaginatedResponse<T> {
 }
 
 export type ParticipantTableResponse = PaginatedResponse<ParticipantTableItem>;
+
+// ── Opciones embebidas en la respuesta de la tabla ─────────────────────
+
+export type ParticipantListOption = { id: number; name: string };
+
+export interface ParticipantListResponse {
+  count: number;
+  next: string | null;
+  previous: string | null;
+  pre_sales: ParticipantListOption[];
+  quota_types: ParticipantListOption[];
+  results: ParticipantTableItem[];
+}

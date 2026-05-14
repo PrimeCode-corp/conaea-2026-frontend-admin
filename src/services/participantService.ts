@@ -1,7 +1,7 @@
 import api from '@/lib/axios';
 import type {
   ParticipantTableFilters,
-  ParticipantTableResponse,
+  ParticipantListResponse,
 } from '@/types/participants.types';
 
 export const participantService = {
@@ -12,7 +12,7 @@ export const participantService = {
       ),
     );
     return api
-      .get<ParticipantTableResponse>('/participants/table/', { params })
+      .get<ParticipantListResponse>('/participants/table/', { params })
       .then((res) => res.data);
   },
 

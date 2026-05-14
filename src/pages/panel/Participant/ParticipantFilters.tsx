@@ -1,4 +1,3 @@
-import { useEffect } from 'react';
 import {
   Select,
   SelectContent,
@@ -6,37 +5,31 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import { usePreSaleStore } from '@/store/usePreSaleStore';
-import { useQuotaTypeStore } from '@/store/useQuotaTypeStore';
+import { useParticipantStore } from '@/store/useParticipantStore';
+import UniversitySearchFilter from './UniversitySearchFilter';
 
 interface ParticipantFiltersProps {
   preSaleId: string;
   documentType: string;
   quotaTypeId: string;
-  universityType: string;
+  universityCode: string;
   onPreSaleChange: (val: string) => void;
   onDocumentTypeChange: (val: string) => void;
   onQuotaTypeChange: (val: string) => void;
-  onUniversityTypeChange: (val: string) => void;
+  onUniversityCodeChange: (code: string) => void;
 }
 
 const ParticipantFilters = ({
   preSaleId,
   documentType,
   quotaTypeId,
-  universityType,
+  universityCode,
   onPreSaleChange,
   onDocumentTypeChange,
   onQuotaTypeChange,
-  onUniversityTypeChange,
+  onUniversityCodeChange,
 }: ParticipantFiltersProps) => {
-  const { preSales, fetchPreSales } = usePreSaleStore();
-  const { quotaTypes, fetchQuotaTypes } = useQuotaTypeStore();
-
-  useEffect(() => {
-    fetchPreSales();
-    fetchQuotaTypes();
-  }, []);
+  const { preSales, quotaTypes } = useParticipantStore();
 
   return (
     <div className='flex flex-wrap gap-2'>
@@ -124,37 +117,11 @@ const ParticipantFilters = ({
         </SelectContent>
       </Select>
 
-      {/* Tipo de inscripción */}
-      <Select
-        value={universityType || 'all'}
-        onValueChange={(val) =>
-          onUniversityTypeChange(val === 'all' ? '' : val)
-        }
-      >
-        <SelectTrigger className='w-44 bg-[#111] border-white/10 text-slate-200 text-sm'>
-          <SelectValue placeholder='Inscripción' />
-        </SelectTrigger>
-        <SelectContent className='bg-[#1a1a1a] border-white/10 text-slate-200'>
-          <SelectItem
-            value='all'
-            className='focus:bg-white/5 focus:text-slate-100'
-          >
-            Tipo de universidad
-          </SelectItem>
-          <SelectItem
-            value='Referido'
-            className='focus:bg-white/5 focus:text-slate-100'
-          >
-            Referido
-          </SelectItem>
-          <SelectItem
-            value='General'
-            className='focus:bg-white/5 focus:text-slate-100'
-          >
-            General
-          </SelectItem>
-        </SelectContent>
-      </Select>
+      {/* Universidad (combobox con búsqueda) */}
+      <UniversitySearchFilter
+        value={universityCode}
+        onChange={onUniversityCodeChange}
+      />
     </div>
   );
 };

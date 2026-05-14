@@ -3,12 +3,15 @@ import { participantService } from '@/services/participantService';
 import type {
   ParticipantTableItem,
   ParticipantTableFilters,
+  ParticipantListOption,
 } from '@/types/participants.types';
 import type { ValidationResponse } from '@/types/validation.types';
 import { validationService } from '@/services/validationService';
 
 type ParticipantStore = {
   participants: ParticipantTableItem[];
+  preSales: ParticipantListOption[];
+  quotaTypes: ParticipantListOption[];
   meta: { count: number; next: string | null; previous: string | null } | null;
   page: number;
   loading: boolean;
@@ -38,6 +41,8 @@ type ParticipantStore = {
 
 export const useParticipantStore = create<ParticipantStore>((set, get) => ({
   participants: [],
+  preSales: [],
+  quotaTypes: [],
   meta: null,
   page: 1,
   loading: false,
@@ -50,6 +55,8 @@ export const useParticipantStore = create<ParticipantStore>((set, get) => ({
       const data = await participantService.getTable({ ...params, page });
       set({
         participants: data.results,
+        preSales: data.pre_sales,
+        quotaTypes: data.quota_types,
         meta: { count: data.count, next: data.next, previous: data.previous },
         page,
       });
