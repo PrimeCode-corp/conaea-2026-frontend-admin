@@ -40,6 +40,7 @@ const ModalEditParticipant = ({
         cod_university: participant.cod_university ?? '',
         university_name: participant.university_name ?? '',
         university_type: participant.university_type ?? '',
+        quota_type: participant.quota_type ?? '',
         discapacidad: participant.discapacidad ?? '',
         alergia: participant.alergia ?? '',
         photograph: null,

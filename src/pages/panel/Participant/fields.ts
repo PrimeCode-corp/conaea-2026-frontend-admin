@@ -74,6 +74,7 @@ export const getParticipantEditFields = (): Field[] => [
     label: 'Ciclo académico',
     placeholder: 'Seleccionar ciclo…',
     fullWidth: true,
+    condition: (form) => form['quota_type'] !== 'General',
     options: ['I', 'II', 'III', 'IV', 'V', 'VI', 'VII', 'VIII', 'IX', 'X'].map(
       (c) => ({ value: c, label: c }),
     ),
@@ -85,6 +86,7 @@ export const getParticipantEditFields = (): Field[] => [
     placeholder: 'Seleccionar…',
     fullWidth: false,
     disabled: true,
+    condition: (form) => form['quota_type'] !== 'General',
     options: [
       { value: 'General', label: 'General' },
       { value: 'Referido', label: 'Referido' },
@@ -95,7 +97,8 @@ export const getParticipantEditFields = (): Field[] => [
     id: 'cod_university',
     label: 'Universidad',
     fullWidth: true,
-    condition: (form) => form['university_type'] === 'Referido',
+    condition: (form) =>
+      form['quota_type'] !== 'General' && form['university_type'] === 'Referido',
     disabled: true,
   },
   {
@@ -104,7 +107,8 @@ export const getParticipantEditFields = (): Field[] => [
     label: 'Universidad',
     placeholder: 'Nombre de la universidad',
     fullWidth: true,
-    condition: (form) => form['university_type'] !== 'Referido',
+    condition: (form) =>
+      form['quota_type'] !== 'General' && form['university_type'] !== 'Referido',
   },
   {
     kind: 'input-checkbox',

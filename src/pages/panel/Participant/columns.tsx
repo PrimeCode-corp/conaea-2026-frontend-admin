@@ -73,17 +73,16 @@ export const getParticipantColumns = () => [
     label: 'Universidad',
     key: 'university_name',
     render: (value: unknown) => {
-      const name = (value as string) || '';
+      const name = !value || value === 0 || value === '0' ? '' : String(value);
 
-      // Elimina la palabra "Universidad" sin importar mayúsculas/minúsculas
       const cleanedName = name
-        .replace(/\buniversidad\b/gi, '') // Quita la palabra
-        .replace(/\s{2,}/g, ' ') // Elimina espacios dobles
-        .trim(); // Quita espacios al inicio y final
+        .replace(/\buniversidad\b/gi, '')
+        .replace(/\s{2,}/g, ' ')
+        .trim();
 
       return (
         <div className='max-w-48'>
-          <span className='text-slate-200 text-xs  text-wrap'>
+          <span className='text-slate-200 text-xs text-wrap'>
             {cleanedName.toUpperCase() || '—'}
           </span>
         </div>
