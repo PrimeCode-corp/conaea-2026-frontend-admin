@@ -1,5 +1,5 @@
 import { Button } from '@/components/ui/button';
-import { CheckCheck, Folder, Pencil, Trash2 } from 'lucide-react';
+import { CheckCheck, Folder, Mail, Pencil, Trash2 } from 'lucide-react';
 import { useState } from 'react';
 import { toast } from 'sonner';
 import type { ParticipantTableItem } from '@/types/participants.types';
@@ -9,14 +9,24 @@ interface ParticipantTableButtonsProps {
   row: ParticipantTableItem;
   onDocuments?: (row: ParticipantTableItem) => void;
   onDelete?: (row: ParticipantTableItem) => void;
-  onEdit?: (row: ParticipantTableItem) => void; // 👈
+  onEdit?: (row: ParticipantTableItem) => void;
+  onEmailLogs?: (row: ParticipantTableItem) => void;
+  lastEmailStatus?: 'sent' | 'failed' | 'pending' | null;
 }
+
+const emailStatusClass: Record<string, string> = {
+  sent: 'text-green-400 hover:bg-green-500/10 hover:text-green-300',
+  failed: 'text-red-400 hover:bg-red-500/10 hover:text-red-300',
+  pending: 'text-yellow-400 hover:bg-yellow-500/10 hover:text-yellow-300',
+};
 
 const ParticipantTableButtons = ({
   row,
   onDocuments,
   onDelete,
   onEdit,
+  onEmailLogs,
+  lastEmailStatus,
 }: ParticipantTableButtonsProps) => {
   const { toggleRegistrationValidation } = useParticipantStore();
   const [validating, setValidating] = useState(false);
@@ -96,11 +106,26 @@ const ParticipantTableButtons = ({
         <Pencil className='h-3.5 w-3.5' />
       </Button>
 
+      {/* Emails */}
+      <Button
+        size='sm'
+        variant='ghost'
+        className={[
+          'h-8 w-8 p-0 transition cursor-pointer',
+          lastEmailStatus
+            ? emailStatusClass[lastEmailStatus]
+            : 'text-slate-400 hover:bg-white/5 hover:text-slate-200',
+        ].join(' ')}
+        onClick={() => onEmailLogs?.(row)}
+      >
+        <Mail className='h-3.5 w-3.5' />
+      </Button>
+
       {/* Documentos */}
       <Button
         size='sm'
         variant='ghost'
-        className='h-8 w-8 p-0 text-slate-400 hover:bg-blue-500/10 hover:text-blue-400 transition cursor-pointer'
+        className='h-8 w-8 p-0 text-slate-400 hover:bg-indigo-500/10 hover:text-indigo-400 transition cursor-pointer'
         onClick={() => onDocuments?.(row)}
       >
         <Folder className='h-3.5 w-3.5' />

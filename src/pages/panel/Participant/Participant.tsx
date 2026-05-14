@@ -15,6 +15,8 @@ import ParticipantTableButtons from './ParticipantTableButtons';
 import type { ParticipantTableItem } from '@/types/participants.types';
 import ModalDocuments from './modals/ModalDocuments';
 import ModalEditParticipant from './modals/ModalEditParticipant';
+import ModalEmailLogs from './modals/ModalEmailLogs';
+import { emailLogService } from '@/services/emailLogService';
 
 type Row = Record<string, unknown>;
 
@@ -47,6 +49,13 @@ const Participant = () => {
   const [selectedEditParticipant, setSelectedEditParticipant] =
     useState<ParticipantTableItem | null>(null);
 
+  const [emailLogsOpen, setEmailLogsOpen] = useState(false);
+  const [selectedEmailLogsParticipant, setSelectedEmailLogsParticipant] =
+    useState<ParticipantTableItem | null>(null);
+  const [emailStatusMap, setEmailStatusMap] = useState<
+    Record<number, 'sent' | 'failed' | 'pending' | null>
+  >({});
+
   // --- Modal Eliminar ---
   const [confirmOpen, setConfirmOpen] = useState(false);
   const [rowToDelete, setRowToDelete] = useState<Row | null>(null);
@@ -76,6 +85,22 @@ const Participant = () => {
     selectedQuotaTypeId,
     selectedUniversityType,
   ]);
+
+  useEffect(() => {
+    if (participants.length === 0) return;
+    Promise.all(
+      participants.map((p) =>
+        emailLogService
+          .getLastStatus(p.id)
+          .then((status) => ({ id: p.id, status }))
+          .catch(() => ({ id: p.id, status: null })),
+      ),
+    ).then((results) => {
+      setEmailStatusMap(
+        Object.fromEntries(results.map(({ id, status }) => [id, status])),
+      );
+    });
+  }, [participants]);
 
   const handleDeleteRequest = (row: ParticipantTableItem) => {
     setRowToDelete(row as unknown as Row);
@@ -111,6 +136,11 @@ const Participant = () => {
   const handleEditRequest = (row: ParticipantTableItem) => {
     setSelectedEditParticipant(row);
     setEditOpen(true);
+  };
+
+  const handleEmailLogsRequest = (row: ParticipantTableItem) => {
+    setSelectedEmailLogsParticipant(row);
+    setEmailLogsOpen(true);
   };
 
   const columns = getParticipantColumns();
@@ -171,6 +201,10 @@ const Participant = () => {
               onEdit={handleEditRequest}
               onDocuments={handleDocumentsRequest}
               onDelete={handleDeleteRequest}
+              onEmailLogs={handleEmailLogsRequest}
+              lastEmailStatus={
+                emailStatusMap[(row as unknown as ParticipantTableItem).id]
+              }
             />
           )}
         </TablePanel>
@@ -201,6 +235,15 @@ const Participant = () => {
           setSelectedEditParticipant(null);
         }}
         participant={selectedEditParticipant}
+      />
+
+      <ModalEmailLogs
+        open={emailLogsOpen}
+        onClose={() => {
+          setEmailLogsOpen(false);
+          setSelectedEmailLogsParticipant(null);
+        }}
+        participant={selectedEmailLogsParticipant}
       />
 
       <Toaster position='bottom-right' richColors theme='dark' />
