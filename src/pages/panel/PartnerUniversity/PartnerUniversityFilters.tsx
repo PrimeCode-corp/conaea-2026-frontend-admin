@@ -40,17 +40,19 @@ const PartnerUniversityFilters = ({
             value={ALL_VALUE}
             className='focus:bg-white/5 focus:text-slate-100'
           >
-            Universidades
+            Tipos
           </SelectItem>
-          {quotaTypes.filter((type) => type.name !== 'General').map((type) => (
-            <SelectItem
-              key={type.id}
-              value={type.id.toString()}
-              className='focus:bg-white/5 focus:text-slate-100'
-            >
-              {type.name}
-            </SelectItem>
-          ))}
+          {quotaTypes
+            .filter((type) => type.name !== 'General')
+            .map((type) => (
+              <SelectItem
+                key={type.id}
+                value={type.id.toString()}
+                className='focus:bg-white/5 focus:text-slate-100'
+              >
+                {type.name}
+              </SelectItem>
+            ))}
         </SelectContent>
       </Select>
     </div>

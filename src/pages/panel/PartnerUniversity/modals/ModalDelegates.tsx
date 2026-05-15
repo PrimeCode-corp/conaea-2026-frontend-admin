@@ -1,12 +1,15 @@
 import { useEffect, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import {
   Dialog,
   DialogContent,
   DialogHeader,
   DialogTitle,
+  DialogFooter,
 } from '@/components/ui/dialog';
+import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
-import { Users, Phone, UserCheck, UserMinus } from 'lucide-react';
+import { Users, Phone, UserCheck, UserMinus, Plus } from 'lucide-react';
 import { delegateService } from '@/services/delegateService';
 import type { Delegate } from '@/types/delegates.types';
 
@@ -25,6 +28,7 @@ const ModalDelegates = ({
 }: ModalDelegatesProps) => {
   const [delegates, setDelegates] = useState<Delegate[]>([]);
   const [loading, setLoading] = useState(false);
+  const navigate = useNavigate();
 
   useEffect(() => {
     if (!open || !universityId) return;
@@ -125,6 +129,20 @@ const ModalDelegates = ({
             })
           )}
         </div>
+
+        <DialogFooter className='pt-2'>
+          <Button
+            size='sm'
+            className='w-full gap-1.5 bg-[#fbba0e] text-black font-semibold hover:bg-[#fbba0e]/90 transition'
+            onClick={() => {
+              onClose();
+              navigate('/delegate');
+            }}
+          >
+            <Plus className='h-3.5 w-3.5' />
+            Crear delegado
+          </Button>
+        </DialogFooter>
       </DialogContent>
     </Dialog>
   );

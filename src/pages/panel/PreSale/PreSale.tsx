@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 
-import { ChartSpline } from 'lucide-react';
+import { ChartSpline, BookMarked } from 'lucide-react';
 
 import HeaderPanel from '../components/HeaderPanel';
 import TablePanel from '../components/TablePanel';
@@ -17,6 +17,14 @@ import PreSaleTableButtons from './PreSaleTableButtons';
 
 import ModalDelete from '../components/modals/ModalDelete';
 import ModalForm from '../components/modals/ModalForm';
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogFooter,
+} from '@/components/ui/dialog';
+import { Button } from '@/components/ui/button';
 
 import { getPreSaleColumns } from './columns';
 import { fields } from './fields';
@@ -44,6 +52,11 @@ const PreSale = () => {
   const [confirmOpen, setConfirmOpen] = useState(false);
   const [rowToDelete, setRowToDelete] = useState<Row | null>(null);
   const [deleting, setDeleting] = useState(false);
+
+  // --- Modal Booking Mode ---
+  const [bookingConfirmOpen, setBookingConfirmOpen] = useState(false);
+  const [rowToToggle, setRowToToggle] = useState<PreSales | null>(null);
+  const [togglingBooking, setTogglingBooking] = useState(false);
 
   // --- Modal Editar (el padre controla qué fila se edita) ---
   const [editOpen, setEditOpen] = useState(false);
@@ -139,18 +152,29 @@ const PreSale = () => {
     }
   };
 
-  const handleToggleBookingMode = async (row: Row) => {
+  const handleToggleBookingRequest = (row: Row) => {
     const original = preSales.find((d) => d.id === (row.id as number));
     if (!original) return;
+    setRowToToggle(original);
+    setBookingConfirmOpen(true);
+  };
+
+  const handleToggleBookingConfirm = async () => {
+    if (!rowToToggle) return;
+    setTogglingBooking(true);
     try {
-      await toggleBookingMode(original.id, !original.booking_mode);
+      await toggleBookingMode(rowToToggle.id, !rowToToggle.booking_mode);
       toast.success(
-        !original.booking_mode
+        !rowToToggle.booking_mode
           ? 'Modo reserva activado.'
           : 'Modo reserva desactivado.',
       );
+      setBookingConfirmOpen(false);
+      setRowToToggle(null);
     } catch {
       toast.error('Error al cambiar el modo de reserva. Intenta nuevamente.');
+    } finally {
+      setTogglingBooking(false);
     }
   };
 
@@ -186,7 +210,7 @@ const PreSale = () => {
               row={row as PreSales}
               onEdit={handleEditRequest}
               onDelete={handleDeleteRequest}
-              onToggleBookingMode={handleToggleBookingMode}
+              onToggleBookingMode={handleToggleBookingRequest}
             />
           )}
         </TablePanel>
@@ -218,6 +242,59 @@ const PreSale = () => {
         description='Edita los campos de la preventa.'
         icon={<ChartSpline className='h-4 w-4 text-black' />}
       />
+
+      {/* Modal Confirmar Booking Mode */}
+      <Dialog
+        open={bookingConfirmOpen}
+        onOpenChange={(val) => {
+          if (!val) {
+            setBookingConfirmOpen(false);
+            setRowToToggle(null);
+          }
+        }}
+      >
+        <DialogContent className='bg-[#1a1a1a] border border-white/10 text-slate-200 sm:max-w-sm'>
+          <DialogHeader>
+            <div className='flex items-center gap-3 mb-1'>
+              <div className='flex h-9 w-9 items-center justify-center rounded-lg bg-amber-500/10 border border-amber-500/20'>
+                <BookMarked className='h-4 w-4 text-amber-400' />
+              </div>
+              <DialogTitle className='text-slate-100 text-lg font-semibold'>
+                {rowToToggle?.booking_mode
+                  ? 'Desactivar modo reserva'
+                  : 'Activar modo reserva'}
+              </DialogTitle>
+            </div>
+            <p className='text-sm text-slate-400 pl-12'>
+              {rowToToggle?.booking_mode
+                ? 'Las nuevas inscripciones se procesarán directamente, sin aprobación manual.'
+                : 'Las nuevas inscripciones quedarán en estado reserva hasta ser aprobadas manualmente.'}
+            </p>
+          </DialogHeader>
+          <DialogFooter className='gap-2 pt-2'>
+            <Button
+              variant='outline'
+              size='sm'
+              className='border-white/10 bg-transparent text-slate-400 hover:bg-white/5 hover:text-white transition'
+              onClick={() => {
+                setBookingConfirmOpen(false);
+                setRowToToggle(null);
+              }}
+              disabled={togglingBooking}
+            >
+              Cancelar
+            </Button>
+            <Button
+              size='sm'
+              className='bg-amber-500 text-black font-semibold hover:bg-amber-400 transition min-w-24'
+              onClick={handleToggleBookingConfirm}
+              disabled={togglingBooking}
+            >
+              {togglingBooking ? 'Guardando...' : 'Confirmar'}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
 
       <Toaster position='bottom-right' richColors theme='dark' />
     </>
