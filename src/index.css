@@ -131,3 +131,26 @@
 html {
   scroll-behavior: smooth;
 }
+
+* {
+  scrollbar-width: thin;
+  scrollbar-color: #fbba0e33 transparent;
+}
+
+*::-webkit-scrollbar {
+  width: 4px;
+  height: 4px;
+}
+
+*::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+*::-webkit-scrollbar-thumb {
+  background-color: #fbba0e33;
+  border-radius: 9999px;
+}
+
+*::-webkit-scrollbar-thumb:hover {
+  background-color: #fbba0e88;
+}

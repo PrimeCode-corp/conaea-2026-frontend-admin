@@ -85,7 +85,9 @@ const PartnerUniversity = () => {
 
   // --- Modal Delegados ---
   const [delegatesOpen, setDelegatesOpen] = useState(false);
-  const [delegatesUniversityId, setDelegatesUniversityId] = useState<number | null>(null);
+  const [delegatesUniversityId, setDelegatesUniversityId] = useState<
+    number | null
+  >(null);
   const [delegatesUniversityName, setDelegatesUniversityName] = useState('');
 
   const handleViewDelegates = (row: Row) => {
@@ -234,7 +236,7 @@ const PartnerUniversity = () => {
           <SearchPanel
             search={search}
             setSearch={setSearch}
-            placeholder='Buscar cupos...'
+            placeholder='Buscar universidades...'
           />
         </div>
 
@@ -289,8 +291,8 @@ const PartnerUniversity = () => {
         onClose={handleDeleteCancel}
         onConfirm={handleDeleteConfirm}
         loading={deleting}
-        title='Eliminar cupo'
-        description={rowToDelete?.title as string}
+        title='Eliminar universidad'
+        description={rowToDelete?.name as string}
       />
 
       <ModalForm

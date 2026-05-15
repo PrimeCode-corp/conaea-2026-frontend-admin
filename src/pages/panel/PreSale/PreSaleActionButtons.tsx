@@ -11,7 +11,8 @@ import { type PreSaleForm, type FormErrors, emptyForm } from './preSale.types';
 import { fields } from './fields';
 import { validate } from '@/utils/validations';
 
-import { toast } from 'sonner'; // 👈 agregar
+import { toast } from 'sonner';
+import { isAxiosError } from 'axios';
 
 const PreSaleActionButtons = () => {
   const { createPreSale } = usePreSaleStore();
@@ -43,8 +44,12 @@ const PreSaleActionButtons = () => {
       toast.success('Preventa creada correctamente.'); // 👈
       setCreateForm(emptyForm);
       setCreateOpen(false);
-    } catch {
-      toast.error('Error al crear la preventa. Intenta nuevamente.'); // 👈
+    } catch (err) {
+      const msg =
+        isAxiosError(err) && err.response?.data?.non_field_errors?.[0]
+          ? err.response.data.non_field_errors[0]
+          : 'Error al crear la preventa. Intenta nuevamente.';
+      toast.error(msg);
     } finally {
       setCreateLoading(false);
     }

@@ -24,6 +24,7 @@ import { validate } from '@/utils/validations';
 
 import { Toaster } from 'sonner'; // 👈 agregar
 import { toast } from 'sonner';
+import { isAxiosError } from 'axios';
 
 type Row = Record<string, unknown>;
 
@@ -35,6 +36,7 @@ const PreSale = () => {
     fetchPreSales,
     removePreSale,
     updatePreSale,
+    toggleBookingMode,
   } = usePreSaleStore();
   const [search, setSearch] = useState('');
 
@@ -126,10 +128,29 @@ const PreSale = () => {
       });
       toast.success('Preventa actualizada correctamente.'); // 👈
       handleEditOpen(false);
-    } catch {
-      toast.error('Error al actualizar la preventa. Intenta nuevamente.'); // 👈
+    } catch (err) {
+      const msg =
+        isAxiosError(err) && err.response?.data?.non_field_errors?.[0]
+          ? err.response.data.non_field_errors[0]
+          : 'Error al actualizar la preventa. Intenta nuevamente.';
+      toast.error(msg);
     } finally {
       setEditLoading(false);
+    }
+  };
+
+  const handleToggleBookingMode = async (row: Row) => {
+    const original = preSales.find((d) => d.id === (row.id as number));
+    if (!original) return;
+    try {
+      await toggleBookingMode(original.id, !original.booking_mode);
+      toast.success(
+        !original.booking_mode
+          ? 'Modo reserva activado.'
+          : 'Modo reserva desactivado.',
+      );
+    } catch {
+      toast.error('Error al cambiar el modo de reserva. Intenta nuevamente.');
     }
   };
 
@@ -165,6 +186,7 @@ const PreSale = () => {
               row={row as PreSales}
               onEdit={handleEditRequest}
               onDelete={handleDeleteRequest}
+              onToggleBookingMode={handleToggleBookingMode}
             />
           )}
         </TablePanel>

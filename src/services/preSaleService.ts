@@ -19,6 +19,11 @@ export const preSaleService = {
       .put<PreSales>(`/register/pre-sale/${id}/`, payload)
       .then((res) => res.data),
 
+  toggleBookingMode: (id: number, booking_mode: boolean) =>
+    api
+      .patch<PreSales>(`/register/pre-sale/${id}/`, { booking_mode })
+      .then((res) => res.data),
+
   remove: (id: number) =>
     api
       .patch<PreSales>(`/register/pre-sale/${id}/`, { is_active: false })

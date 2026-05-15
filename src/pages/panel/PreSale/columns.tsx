@@ -31,4 +31,19 @@ export const getPreSaleColumns = () => [
     key: 'end_date',
     render: (value: unknown) => formatDateTime(value),
   },
+  {
+    id: 4,
+    label: 'Modo',
+    key: 'booking_mode',
+    render: (value: unknown) =>
+      value ? (
+        <span className='text-xs font-medium uppercase text-amber-400'>
+          Reserva
+        </span>
+      ) : (
+        <span className='text-xs font-medium uppercase text-slate-400'>
+          Directo
+        </span>
+      ),
+  },
 ];

@@ -206,23 +206,59 @@ const AdminHome = () => {
   }, []);
 
   const p = data?.participants;
-  const activePreSale = data?.active_pre_sale;
+  const rawPreSale = data?.active_pre_sale;
+  const now = new Date();
+  const activePreSale =
+    rawPreSale &&
+    new Date(rawPreSale.start_date) <= now &&
+    now <= new Date(rawPreSale.end_date)
+      ? rawPreSale
+      : null;
 
   return (
     <div className='bg-[#111] min-h-screen px-4 sm:px-6 md:px-8 py-8 sm:py-10 space-y-6 sm:space-y-10'>
       {/* ── Bienvenida ─────────────────────────────────────────────── */}
-      <div>
-        <p className='text-xs font-bold tracking-[0.3em] uppercase text-[#fbba0e] mb-2'>
-          CONAEA 2026 · Panel de Administración
-        </p>
-        <h1 className='text-3xl sm:text-4xl font-black text-slate-100 leading-tight mb-2'>
-          Bienvenido al sistema
-        </h1>
-        <p className='text-slate-500 text-sm max-w-lg'>
-          Desde aquí puedes gestionar todo el contenido del XXXII Congreso
-          Nacional de Estudiantes de Agronomía.
-        </p>
-        <div className='w-12 h-0.5 bg-[#fbba0e] rounded-full mt-4' />
+      <div className='flex items-start justify-between gap-4'>
+        <div>
+          <p className='text-xs font-bold tracking-[0.3em] uppercase text-[#fbba0e] mb-2'>
+            CONAEA 2026 · Panel de Administración
+          </p>
+          <h1 className='text-3xl sm:text-4xl font-black text-slate-100 leading-tight mb-2'>
+            Bienvenido al sistema
+          </h1>
+          <p className='text-slate-500 text-sm max-w-lg'>
+            Desde aquí puedes gestionar todo el contenido del XXXII Congreso
+            Nacional de Estudiantes de Agronomía.
+          </p>
+          <div className='w-12 h-0.5 bg-[#fbba0e] rounded-full mt-4' />
+        </div>
+
+        {/* Preventa activa */}
+        <div className='shrink-0 flex flex-col items-end gap-1 pt-1'>
+          <p className='text-[10px] font-bold tracking-[0.2em] uppercase text-slate-500'>
+            Preventa activa
+          </p>
+          {loading ? (
+            <div className='h-5 w-28 rounded bg-white/5 animate-pulse mt-1' />
+          ) : activePreSale ? (
+            <>
+              <p className='text-sm font-black text-slate-100'>
+                {activePreSale.name}
+              </p>
+              <span
+                className={`text-xs font-bold uppercase tracking-wide ${
+                  activePreSale.booking_mode
+                    ? 'text-amber-400'
+                    : 'text-slate-400'
+                }`}
+              >
+                {activePreSale.booking_mode ? 'Reserva' : 'Directo'}
+              </span>
+            </>
+          ) : (
+            <p className='text-xs text-slate-600 mt-1'>Sin preventa activa</p>
+          )}
+        </div>
       </div>
 
       {/* ── Stats ──────────────────────────────────────────────────── */}

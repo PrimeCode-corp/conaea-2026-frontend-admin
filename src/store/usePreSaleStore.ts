@@ -16,6 +16,7 @@ type PreSaleStore = {
     id: number,
     payload: Partial<PreSalePayload>,
   ) => Promise<void>;
+  toggleBookingMode: (id: number, booking_mode: boolean) => Promise<void>;
   removePreSale: (id: number) => Promise<void>;
   invalidatePreSales: () => Promise<void>;
 };
@@ -44,8 +45,8 @@ export const usePreSaleStore = create<PreSaleStore>((set, get) => ({
       const newPreSale = await preSaleService.create(payload);
       set((state) => ({ preSales: [...state.preSales, newPreSale] }));
       get().invalidatePreSales();
-    } catch {
-      throw new Error('Error al crear la preventa');
+    } catch (err) {
+      throw err;
     }
   },
 
@@ -56,8 +57,19 @@ export const usePreSaleStore = create<PreSaleStore>((set, get) => ({
         preSales: state.preSales.map((p) => (p.id === id ? updated : p)),
       }));
       get().invalidatePreSales();
+    } catch (err) {
+      throw err;
+    }
+  },
+
+  toggleBookingMode: async (id, booking_mode) => {
+    try {
+      const updated = await preSaleService.toggleBookingMode(id, booking_mode);
+      set((state) => ({
+        preSales: state.preSales.map((p) => (p.id === id ? updated : p)),
+      }));
     } catch {
-      throw new Error('Error al actualizar la preventa');
+      throw new Error('Error al cambiar el modo de reserva');
     }
   },
 

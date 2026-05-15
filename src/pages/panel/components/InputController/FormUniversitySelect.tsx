@@ -86,7 +86,7 @@ const FormUniversitySelect = ({
   };
 
   return (
-    <div ref={containerRef} className='flex flex-col gap-1.5 relative'>
+    <div ref={containerRef} className='flex flex-col gap-1.5 relative w-full'>
       {label && (
         <Label className='text-xs font-semibold uppercase tracking-wider text-slate-400 flex items-center gap-1.5'>
           <Building2 className='text-[#fbba0e] size-3 mb-px' />
