@@ -61,6 +61,7 @@ const TablePanel = ({
         </Badge>
       </div>
 
+      <div className='overflow-x-auto'>
       <Table>
         <TableHeader>
           <TableRow className='border-white/10 hover:bg-transparent'>
@@ -141,6 +142,7 @@ const TablePanel = ({
           )}
         </TableBody>
       </Table>
+      </div>
 
       {/* Paginación — solo se muestra si se pasa el prop */}
       {pagination && totalPages && totalPages > 1 && (
