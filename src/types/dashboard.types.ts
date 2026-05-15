@@ -8,6 +8,7 @@ export type DashboardData = {
     name: string;
     start_date: string;
     end_date: string;
+    booking_mode: boolean;
     slots: { quota_type__name: string; amount: number }[];
   } | null;
 };

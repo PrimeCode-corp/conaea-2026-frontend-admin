@@ -40,6 +40,7 @@ const PreSaleActionButtons = () => {
         name: createForm.name,
         start_date: createForm.start_date,
         end_date: createForm.end_date,
+        booking_mode: false,
       });
       toast.success('Preventa creada correctamente.'); // 👈
       setCreateForm(emptyForm);
