@@ -47,8 +47,9 @@ export const useAvailableSlotStore = create<AvailableSlotStore>((set, get) => ({
 
   createAvailableSlot: async (payload) => {
     try {
-      await availableSlotService.create(payload);
-      get().invalidateAvailableSlots();
+      const created = await availableSlotService.create(payload);
+      const detail = await availableSlotService.getById(created.id);
+      set((state) => ({ availableSlots: [...state.availableSlots, detail] }));
     } catch {
       throw new Error('Error al crear el cupo');
     }
@@ -57,7 +58,12 @@ export const useAvailableSlotStore = create<AvailableSlotStore>((set, get) => ({
   updateAvailableSlot: async (id, payload) => {
     try {
       await availableSlotService.update(id, payload);
-      get().invalidateAvailableSlots();
+      const detail = await availableSlotService.getById(id);
+      set((state) => ({
+        availableSlots: state.availableSlots.map((s) =>
+          s.id === id ? detail : s,
+        ),
+      }));
     } catch {
       throw new Error('Error al actualizar el cupo');
     }
@@ -69,7 +75,6 @@ export const useAvailableSlotStore = create<AvailableSlotStore>((set, get) => ({
       set((state) => ({
         availableSlots: state.availableSlots.filter((s) => s.id !== id),
       }));
-      get().invalidateAvailableSlots();
     } catch {
       throw new Error('Error al eliminar el cupo');
     }

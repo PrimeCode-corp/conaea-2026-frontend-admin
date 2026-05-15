@@ -14,6 +14,7 @@ type ParticipantStore = {
   quotaTypes: ParticipantListOption[];
   meta: { count: number; next: string | null; previous: string | null } | null;
   page: number;
+  lastParams: ParticipantTableFilters;
   loading: boolean;
   error: string | null;
   stats: { total: number; validated: number; pending: number } | null;
@@ -45,12 +46,13 @@ export const useParticipantStore = create<ParticipantStore>((set, get) => ({
   quotaTypes: [],
   meta: null,
   page: 1,
+  lastParams: {},
   loading: false,
   error: null,
   stats: null,
 
   fetchParticipants: async (page = 1, params?) => {
-    set({ loading: true, error: null });
+    set({ loading: true, error: null, lastParams: params ?? {}, page });
     try {
       const data = await participantService.getTable({ ...params, page });
       set({
@@ -58,7 +60,6 @@ export const useParticipantStore = create<ParticipantStore>((set, get) => ({
         preSales: data.pre_sales,
         quotaTypes: data.quota_types,
         meta: { count: data.count, next: data.next, previous: data.previous },
-        page,
       });
     } catch {
       set({ error: 'Error al cargar los participantes' });
@@ -68,19 +69,43 @@ export const useParticipantStore = create<ParticipantStore>((set, get) => ({
   },
 
   updateParticipant: async (id, formData) => {
-    await participantService.update(id, formData);
-    await get().invalidate();
+    const updated = await participantService.update(id, formData);
+    // Optimistic: aplica los campos conocidos de inmediato
+    set((state) => ({
+      participants: state.participants.map((p) =>
+        p.id === id ? { ...p, ...updated } : p,
+      ),
+    }));
+    // Re-fetch silencioso para obtener campos calculados (university_name, full_name, etc.)
+    const { page, lastParams } = get();
+    try {
+      const data = await participantService.getTable({ ...lastParams, page });
+      set({
+        participants: data.results,
+        meta: { count: data.count, next: data.next, previous: data.previous },
+      });
+    } catch {
+      // si falla el re-fetch silencioso, los datos optimistas se mantienen
+    }
   },
 
   removeParticipant: async (id: number) => {
     try {
       await participantService.remove(id);
-      set((state) => ({
-        participants: state.participants.filter((p) => p.id !== id),
-      }));
     } catch {
       throw new Error('Error al eliminar el participante');
     }
+    set((state) => ({
+      participants: state.participants.filter((p) => p.id !== id),
+    }));
+    try {
+      const { page, lastParams } = get();
+      const data = await participantService.getTable({ ...lastParams, page });
+      set({
+        participants: data.results,
+        meta: { count: data.count, next: data.next, previous: data.previous },
+      });
+    } catch { /* keep optimistic */ }
   },
 
   invalidate: async () => {
@@ -90,7 +115,11 @@ export const useParticipantStore = create<ParticipantStore>((set, get) => ({
   toggleEnrollmentValidation: async (enrollmentId) => {
     try {
       const result = await validationService.toggleEnrollment(enrollmentId);
-      await get().invalidate();
+      const { page, lastParams } = get();
+      try {
+        const data = await participantService.getTable({ ...lastParams, page });
+        set({ participants: data.results, meta: { count: data.count, next: data.next, previous: data.previous } });
+      } catch { /* keep current state */ }
       return result;
     } catch {
       throw new Error('Error al validar la ficha');
@@ -100,7 +129,11 @@ export const useParticipantStore = create<ParticipantStore>((set, get) => ({
   toggleTransactionValidation: async (transactionId) => {
     try {
       const result = await validationService.toggleTransaction(transactionId);
-      await get().invalidate();
+      const { page, lastParams } = get();
+      try {
+        const data = await participantService.getTable({ ...lastParams, page });
+        set({ participants: data.results, meta: { count: data.count, next: data.next, previous: data.previous } });
+      } catch { /* keep current state */ }
       return result;
     } catch {
       throw new Error('Error al validar la transacción');
@@ -110,7 +143,11 @@ export const useParticipantStore = create<ParticipantStore>((set, get) => ({
   toggleRegistrationValidation: async (participantId) => {
     try {
       const result = await validationService.toggleRegistration(participantId);
-      await get().invalidate();
+      const { page, lastParams } = get();
+      try {
+        const data = await participantService.getTable({ ...lastParams, page });
+        set({ participants: data.results, meta: { count: data.count, next: data.next, previous: data.previous } });
+      } catch { /* keep current state */ }
       return result;
     } catch {
       throw new Error('Error al validar el registro');

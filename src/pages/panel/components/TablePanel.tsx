@@ -7,9 +7,13 @@ import {
   TableRow,
 } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
-import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
-import { ChevronLeft, ChevronRight } from 'lucide-react';
+import {
+  ChevronFirst,
+  ChevronLast,
+  ChevronLeft,
+  ChevronRight,
+} from 'lucide-react';
 
 // --- Tipos ---
 type Column = {
@@ -62,113 +66,137 @@ const TablePanel = ({
       </div>
 
       <div className='overflow-x-auto'>
-      <Table>
-        <TableHeader>
-          <TableRow className='border-white/10 hover:bg-transparent'>
-            <TableHead className='text-xs font-semibold uppercase tracking-wider text-slate-500 w-8'>
-              #
-            </TableHead>
-            {columns.map((col) => (
-              <TableHead
-                key={col.id}
-                className='text-xs font-semibold uppercase tracking-wider text-slate-500'
-              >
-                {col.label}
+        <Table>
+          <TableHeader>
+            <TableRow className='border-white/10 hover:bg-transparent'>
+              <TableHead className='text-xs font-semibold uppercase tracking-wider text-slate-500 w-8'>
+                #
               </TableHead>
-            ))}
-            {children && (
-              <TableHead className='text-xs font-semibold uppercase tracking-wider text-slate-500 text-right'>
-                Acciones
-              </TableHead>
-            )}
-          </TableRow>
-        </TableHeader>
-
-        <TableBody>
-          {loading ? (
-            Array.from({ length: 5 }).map((_, idx) => (
-              <TableRow key={idx} className='border-white/10'>
-                <TableCell>
-                  <Skeleton className='h-4 w-6 bg-white/10' />
-                </TableCell>
-                {columns.map((col) => (
-                  <TableCell key={col.id}>
-                    <Skeleton className='h-4 w-full bg-white/10' />
-                  </TableCell>
-                ))}
-                {children && (
-                  <TableCell>
-                    <Skeleton className='h-4 w-16 ml-auto bg-white/10' />
-                  </TableCell>
-                )}
-              </TableRow>
-            ))
-          ) : data.length === 0 ? (
-            <TableRow className='hover:bg-transparent'>
-              <TableCell
-                colSpan={columns.length + 2}
-                className='py-12 text-center text-sm text-slate-500'
-              >
-                No se encontraron resultados.
-              </TableCell>
+              {columns.map((col) => (
+                <TableHead
+                  key={col.id}
+                  className='text-xs font-semibold uppercase tracking-wider text-slate-500'
+                >
+                  {col.label}
+                </TableHead>
+              ))}
+              {children && (
+                <TableHead className='text-xs font-semibold uppercase tracking-wider text-slate-500 text-right'>
+                  Acciones
+                </TableHead>
+              )}
             </TableRow>
-          ) : (
-            data.map((row, idx) => (
-              <TableRow
-                key={idx}
-                className='border-white/10 hover:bg-white/5 transition-colors'
-              >
-                <TableCell className='text-xs text-slate-500 font-mono'>
-                  {String(
-                    pagination
-                      ? (pagination.page - 1) * (pagination.pageSize ?? 10) +
-                          idx +
-                          1
-                      : idx + 1,
-                  ).padStart(2, '0')}
-                </TableCell>
-                {columns.map((col) => (
-                  <TableCell key={col.id} className='text-sm text-slate-200'>
-                    {col.render
-                      ? col.render(row[col.key], row)
-                      : String(row[col.key] ?? '—')}
+          </TableHeader>
+
+          <TableBody>
+            {loading ? (
+              Array.from({ length: 5 }).map((_, idx) => (
+                <TableRow key={idx} className='border-white/10'>
+                  <TableCell>
+                    <Skeleton className='h-4 w-6 bg-white/10' />
                   </TableCell>
-                ))}
-                {children && (
-                  <TableCell className='text-right'>{children(row)}</TableCell>
-                )}
+                  {columns.map((col) => (
+                    <TableCell key={col.id}>
+                      <Skeleton className='h-4 w-full bg-white/10' />
+                    </TableCell>
+                  ))}
+                  {children && (
+                    <TableCell>
+                      <Skeleton className='h-4 w-16 ml-auto bg-white/10' />
+                    </TableCell>
+                  )}
+                </TableRow>
+              ))
+            ) : data.length === 0 ? (
+              <TableRow className='hover:bg-transparent'>
+                <TableCell
+                  colSpan={columns.length + 2}
+                  className='py-12 text-center text-sm text-slate-500'
+                >
+                  No se encontraron resultados.
+                </TableCell>
               </TableRow>
-            ))
-          )}
-        </TableBody>
-      </Table>
+            ) : (
+              data.map((row, idx) => (
+                <TableRow
+                  key={idx}
+                  className='border-white/10 hover:bg-white/5 transition-colors'
+                >
+                  <TableCell className='text-xs text-slate-500 font-mono'>
+                    {String(
+                      pagination
+                        ? (pagination.page - 1) * (pagination.pageSize ?? 10) +
+                            idx +
+                            1
+                        : idx + 1,
+                    ).padStart(2, '0')}
+                  </TableCell>
+                  {columns.map((col) => (
+                    <TableCell key={col.id} className='text-sm text-slate-200'>
+                      {col.render
+                        ? col.render(row[col.key], row)
+                        : String(row[col.key] ?? '—')}
+                    </TableCell>
+                  ))}
+                  {children && (
+                    <TableCell className='text-right'>
+                      {children(row)}
+                    </TableCell>
+                  )}
+                </TableRow>
+              ))
+            )}
+          </TableBody>
+        </Table>
       </div>
 
       {/* Paginación — solo se muestra si se pasa el prop */}
       {pagination && totalPages && totalPages > 1 && (
-        <div className='flex items-center justify-between py-4'>
+        <div className='flex items-center justify-between border-t border-white/10 py-3'>
           <span className='text-xs text-slate-500'>
-            Página {pagination.page} de {totalPages}
+            {(pagination.page - 1) * (pagination.pageSize ?? 10) + 1}–
+            {Math.min(
+              pagination.page * (pagination.pageSize ?? 10),
+              pagination.count,
+            )}{' '}
+            de {pagination.count} elemento{pagination.count !== 1 ? 's' : ''}
           </span>
-          <div className='flex items-center gap-2'>
-            <Button
-              size='sm'
-              variant='outline'
-              className='h-8 w-8 p-0 border-white/10 bg-transparent text-slate-400 hover:bg-white/5 hover:text-white transition'
+          <div className='flex items-center gap-1'>
+            <button
+              onClick={() => pagination.onPageChange(1)}
+              disabled={!pagination.previous}
+              title='Primera página'
+              className='flex h-7 w-7 items-center justify-center rounded-lg border border-white/10 text-slate-400 transition hover:bg-white/5 hover:text-white disabled:cursor-not-allowed disabled:opacity-30 cursor-pointer'
+            >
+              <ChevronFirst className='h-3.5 w-3.5' />
+            </button>
+            <button
               onClick={() => pagination.onPageChange(pagination.page - 1)}
               disabled={!pagination.previous}
+              title='Página anterior'
+              className='flex h-7 w-7 items-center justify-center rounded-lg border border-white/10 text-slate-400 transition hover:bg-white/5 hover:text-white disabled:cursor-not-allowed disabled:opacity-30 cursor-pointer'
             >
-              <ChevronLeft className='h-4 w-4' />
-            </Button>
-            <Button
-              size='sm'
-              variant='outline'
-              className='h-8 w-8 p-0 border-white/10 bg-transparent text-slate-400 hover:bg-white/5 hover:text-white transition'
+              <ChevronLeft className='h-3.5 w-3.5' />
+            </button>
+            <span className='px-2 text-xs text-slate-500'>
+              {pagination.page} / {totalPages}
+            </span>
+            <button
               onClick={() => pagination.onPageChange(pagination.page + 1)}
               disabled={!pagination.next}
+              title='Página siguiente'
+              className='flex h-7 w-7 items-center justify-center rounded-lg border border-white/10 text-slate-400 transition hover:bg-white/5 hover:text-white disabled:cursor-not-allowed disabled:opacity-30 cursor-pointer'
             >
-              <ChevronRight className='h-4 w-4' />
-            </Button>
+              <ChevronRight className='h-3.5 w-3.5' />
+            </button>
+            <button
+              onClick={() => pagination.onPageChange(totalPages)}
+              disabled={!pagination.next}
+              title='Última página'
+              className='flex h-7 w-7 items-center justify-center rounded-lg border border-white/10 text-slate-400 transition hover:bg-white/5 hover:text-white disabled:cursor-not-allowed disabled:opacity-30 cursor-pointer'
+            >
+              <ChevronLast className='h-3.5 w-3.5' />
+            </button>
           </div>
         </div>
       )}

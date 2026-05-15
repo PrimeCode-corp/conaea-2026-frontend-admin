@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { useClientPagination } from '@/hooks/useClientPagination';
 
 import { Zap } from 'lucide-react';
 
@@ -202,6 +203,8 @@ const Activity = () => {
       : true;
     return matchSearch && matchDay && matchType && matchSpeaker;
   });
+  const { page, totalPages, paginated, pageSize, hasPrev, hasNext, goNext, goPrev, goTo } =
+    useClientPagination(filtered);
 
   if (loading) return <LoadingControl />;
   if (error) return <p className='text-red-400 p-8'>{error}</p>;
@@ -234,7 +237,7 @@ const Activity = () => {
           />
         </div>
 
-        <TablePanel columns={columns} data={filtered}>
+        <TablePanel columns={columns} data={paginated}>
           {(row) => (
             <ActivityTableButtons
               row={row as Activities}
@@ -244,7 +247,18 @@ const Activity = () => {
           )}
         </TablePanel>
 
-        <FooterPanel filtered={filtered.length} elements={days.length} />
+        <FooterPanel
+          filtered={filtered.length}
+          elements={activities.length}
+          page={page}
+          totalPages={totalPages}
+          pageSize={pageSize}
+          hasPrev={hasPrev}
+          hasNext={hasNext}
+          onPrev={goPrev}
+          onNext={goNext}
+          onGoTo={goTo}
+        />
       </div>
 
       {/* Modal Eliminar */}

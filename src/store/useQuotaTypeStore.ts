@@ -42,7 +42,6 @@ export const useQuotaTypeStore = create<QuotaTypeStore>((set, get) => ({
     try {
       const newQuotaType = await quotaTypeService.create(payload);
       set((state) => ({ quotaTypes: [...state.quotaTypes, newQuotaType] }));
-      get().invalidateQuotaTypes();
     } catch {
       throw new Error('Error al crear el tipo de cuota');
     }
@@ -54,7 +53,6 @@ export const useQuotaTypeStore = create<QuotaTypeStore>((set, get) => ({
       set((state) => ({
         quotaTypes: state.quotaTypes.map((q) => (q.id === id ? updated : q)),
       }));
-      get().invalidateQuotaTypes();
     } catch {
       throw new Error('Error al actualizar el tipo de cuota');
     }
@@ -66,7 +64,6 @@ export const useQuotaTypeStore = create<QuotaTypeStore>((set, get) => ({
       set((state) => ({
         quotaTypes: state.quotaTypes.filter((q) => q.id !== id),
       }));
-      get().invalidateQuotaTypes();
     } catch {
       throw new Error('Error al eliminar el tipo de cuota');
     }

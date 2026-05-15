@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { useClientPagination } from '@/hooks/useClientPagination';
 
 import { CalendarDays } from 'lucide-react';
 
@@ -66,6 +67,8 @@ const Day = () => {
   const filtered = days.filter((d) =>
     d.title.toLowerCase().includes(search.toLowerCase()),
   );
+  const { page, totalPages, paginated, pageSize, hasPrev, hasNext, goNext, goPrev, goTo } =
+    useClientPagination(filtered);
 
   // Abre el modal de editar con la fila seleccionada
   const handleEditRequest = (row: Row) => {
@@ -156,7 +159,7 @@ const Day = () => {
           />
         </div>
 
-        <TablePanel columns={columns} data={filtered}>
+        <TablePanel columns={columns} data={paginated}>
           {(row) => (
             <DayTableButtons
               row={row as Days}
@@ -166,7 +169,18 @@ const Day = () => {
           )}
         </TablePanel>
 
-        <FooterPanel filtered={filtered.length} elements={days.length} />
+        <FooterPanel
+          filtered={filtered.length}
+          elements={days.length}
+          page={page}
+          totalPages={totalPages}
+          pageSize={pageSize}
+          hasPrev={hasPrev}
+          hasNext={hasNext}
+          onPrev={goPrev}
+          onNext={goNext}
+          onGoTo={goTo}
+        />
       </div>
 
       {/* Modal Eliminar */}

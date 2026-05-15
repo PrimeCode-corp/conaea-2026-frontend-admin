@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { useClientPagination } from '@/hooks/useClientPagination';
 
 import { ChartSpline, BookMarked } from 'lucide-react';
 
@@ -85,6 +86,8 @@ const PreSale = () => {
   const filtered = preSales.filter((d) =>
     d.name.toLowerCase().includes(search.toLowerCase()),
   );
+  const { page, totalPages, paginated, pageSize, hasPrev, hasNext, goNext, goPrev, goTo } =
+    useClientPagination(filtered);
 
   // Abre el modal de editar con la fila seleccionada
   const handleEditRequest = (row: Row) => {
@@ -204,7 +207,7 @@ const PreSale = () => {
           />
         </div>
 
-        <TablePanel columns={columns} data={filtered}>
+        <TablePanel columns={columns} data={paginated}>
           {(row) => (
             <PreSaleTableButtons
               row={row as PreSales}
@@ -215,7 +218,18 @@ const PreSale = () => {
           )}
         </TablePanel>
 
-        <FooterPanel filtered={filtered.length} elements={preSales.length} />
+        <FooterPanel
+          filtered={filtered.length}
+          elements={preSales.length}
+          page={page}
+          totalPages={totalPages}
+          pageSize={pageSize}
+          hasPrev={hasPrev}
+          hasNext={hasNext}
+          onPrev={goPrev}
+          onNext={goNext}
+          onGoTo={goTo}
+        />
       </div>
 
       {/* Modal Eliminar */}

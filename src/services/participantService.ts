@@ -1,6 +1,7 @@
 import api from '@/lib/axios';
 import type {
   ParticipantTableFilters,
+  ParticipantTableItem,
   ParticipantListResponse,
 } from '@/types/participants.types';
 
@@ -18,7 +19,7 @@ export const participantService = {
 
   update: (id: number, formData: FormData) =>
     api
-      .patch(`/participants/participant/${id}/update/`, formData, {
+      .patch<ParticipantTableItem>(`/participants/participant/${id}/update/`, formData, {
         headers: { 'Content-Type': 'multipart/form-data' },
       })
       .then((res) => res.data),

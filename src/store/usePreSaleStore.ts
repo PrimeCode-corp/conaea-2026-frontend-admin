@@ -44,7 +44,6 @@ export const usePreSaleStore = create<PreSaleStore>((set, get) => ({
     try {
       const newPreSale = await preSaleService.create(payload);
       set((state) => ({ preSales: [...state.preSales, newPreSale] }));
-      get().invalidatePreSales();
     } catch (err) {
       throw err;
     }
@@ -56,7 +55,6 @@ export const usePreSaleStore = create<PreSaleStore>((set, get) => ({
       set((state) => ({
         preSales: state.preSales.map((p) => (p.id === id ? updated : p)),
       }));
-      get().invalidatePreSales();
     } catch (err) {
       throw err;
     }
@@ -79,7 +77,6 @@ export const usePreSaleStore = create<PreSaleStore>((set, get) => ({
       set((state) => ({
         preSales: state.preSales.filter((p) => p.id !== id),
       }));
-      get().invalidatePreSales();
     } catch {
       throw new Error('Error al eliminar la preventa');
     }

@@ -109,10 +109,6 @@ const Delegates = () => {
       toast.success('Delegado eliminado correctamente.');
       setConfirmOpen(false);
       setRowToDelete(null);
-      fetchDelegates(1, {
-        search: search || undefined,
-        partner_university_id: selectedUniversityId,
-      });
     } catch {
       toast.error('Error al eliminar el delegado. Intenta nuevamente.');
     } finally {
@@ -151,10 +147,6 @@ const Delegates = () => {
       await updateDelegate(rowToEdit.id, formToPayload(editForm));
       toast.success('Delegado actualizado correctamente.');
       handleEditOpen(false);
-      fetchDelegates(page, {
-        search: search || undefined,
-        partner_university_id: selectedUniversityId,
-      });
     } catch {
       toast.error('Error al actualizar el delegado. Intenta nuevamente.');
     } finally {

@@ -18,4 +18,9 @@ export const emailLogService = {
         params: { participant_id: participantId, page_size: 1 },
       })
       .then((res) => res.data.results[0]?.status ?? null),
+
+  resend: (participantId: number) =>
+    api
+      .post('/security/resend-email/', { participant_id: participantId })
+      .then((res) => res.data),
 };

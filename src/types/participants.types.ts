@@ -14,6 +14,8 @@ export interface ParticipantTableItem {
   birthday: string;
   cellphone: string;
   email: string;
+  fecha: string;
+  hora: string;
   academic_cycle: string;
   cod_university: string;
   university_type: 'Referido' | 'General';
@@ -56,7 +58,11 @@ export type ParticipantTableResponse = PaginatedResponse<ParticipantTableItem>;
 
 // ── Opciones embebidas en la respuesta de la tabla ─────────────────────
 
-export type ParticipantListOption = { id: number; name: string; is_default?: boolean };
+export type ParticipantListOption = {
+  id: number;
+  name: string;
+  is_default?: boolean;
+};
 
 export interface ParticipantListResponse {
   count: number;

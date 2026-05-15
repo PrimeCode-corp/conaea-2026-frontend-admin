@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { useClientPagination } from '@/hooks/useClientPagination';
 
 import { Brackets } from 'lucide-react';
 
@@ -70,6 +71,8 @@ const ActivityType = () => {
   const filtered = activityTypes.filter((d) =>
     d.name.toLowerCase().includes(search.toLowerCase()),
   );
+  const { page, totalPages, paginated, pageSize, hasPrev, hasNext, goNext, goPrev, goTo } =
+    useClientPagination(filtered);
 
   // Abre el modal de editar con la fila seleccionada
   const handleEditRequest = (row: Row) => {
@@ -162,7 +165,7 @@ const ActivityType = () => {
           />
         </div>
 
-        <TablePanel columns={columns} data={filtered}>
+        <TablePanel columns={columns} data={paginated}>
           {(row) => (
             <ActivityTypeTableButtons
               row={row as ActivityTypes}
@@ -175,6 +178,14 @@ const ActivityType = () => {
         <FooterPanel
           filtered={filtered.length}
           elements={activityTypes.length}
+          page={page}
+          totalPages={totalPages}
+          pageSize={pageSize}
+          hasPrev={hasPrev}
+          hasNext={hasNext}
+          onPrev={goPrev}
+          onNext={goNext}
+          onGoTo={goTo}
         />
       </div>
 

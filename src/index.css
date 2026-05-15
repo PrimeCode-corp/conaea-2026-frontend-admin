@@ -132,6 +132,14 @@ html {
   scroll-behavior: smooth;
 }
 
+@keyframes blink {
+  0%, 100% { color: rgb(71 85 105); }
+  50% { color: rgb(203 213 225); }
+}
+.animate-blink {
+  animation: blink 0.9s step-end infinite;
+}
+
 * {
   scrollbar-width: thin;
   scrollbar-color: #fbba0e33 transparent;

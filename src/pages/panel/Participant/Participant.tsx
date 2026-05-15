@@ -114,7 +114,6 @@ const Participant = () => {
       toast.success('Participante eliminado correctamente.');
       setConfirmOpen(false);
       setRowToDelete(null);
-      fetchParticipants(page, params);
     } catch {
       toast.error('Error al eliminar el participante. Intenta nuevamente.');
     } finally {

@@ -159,10 +159,6 @@ const PartnerUniversity = () => {
       toast.success('Universidad eliminada correctamente.');
       setConfirmOpen(false);
       setRowToDelete(null);
-      fetchUniversities(1, {
-        search: search || undefined,
-        quota_type_id: selectedQuotaTypeId,
-      });
     } catch {
       toast.error('Error al eliminar la universidad. Intenta nuevamente.');
     } finally {
@@ -191,10 +187,6 @@ const PartnerUniversity = () => {
       await updateUniversity(rowToEdit.id, formToPayload(editForm));
       toast.success('Universidad actualizada correctamente.');
       handleEditOpen(false);
-      fetchUniversities(1, {
-        search: search || undefined,
-        quota_type_id: selectedQuotaTypeId,
-      });
     } catch {
       toast.error('Error al actualizar la universidad. Intenta nuevamente.');
     } finally {

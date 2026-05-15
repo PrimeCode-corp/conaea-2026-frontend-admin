@@ -1,9 +1,10 @@
 import { Button } from '@/components/ui/button';
 import { CheckCheck, Folder, Mail, Pencil, Trash2 } from 'lucide-react';
-import { useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { toast } from 'sonner';
 import type { ParticipantTableItem } from '@/types/participants.types';
 import { useParticipantStore } from '@/store/useParticipantStore';
+import { watchEmailStatus } from '@/utils/watchEmailStatus';
 
 interface ParticipantTableButtonsProps {
   row: ParticipantTableItem;
@@ -28,6 +29,11 @@ const ParticipantTableButtons = ({
 }: ParticipantTableButtonsProps) => {
   const { toggleRegistrationValidation } = useParticipantStore();
   const [validating, setValidating] = useState(false);
+  const [watchingEmail, setWatchingEmail] = useState(false);
+  const [localEmailStatus, setLocalEmailStatus] = useState<string | null>(null);
+  const esRef = useRef<EventSource | null>(null);
+
+  useEffect(() => () => { esRef.current?.close(); }, []);
 
   const isGeneral = row.quota_type === 'General';
 
@@ -43,13 +49,28 @@ const ParticipantTableButtons = ({
 
   const handleValidate = async () => {
     setValidating(true);
+    const wasValidated = row.is_validated;
     try {
       await toggleRegistrationValidation(row.id);
       toast.success(
-        row.is_validated
+        wasValidated
           ? 'Validación removida correctamente.'
           : 'Participante validado correctamente.',
       );
+      if (!wasValidated) {
+        esRef.current?.close();
+        setWatchingEmail(true);
+        setLocalEmailStatus(null);
+        esRef.current = watchEmailStatus(row.id, (status, error) => {
+          setWatchingEmail(false);
+          setLocalEmailStatus(status === 'sent' ? 'sent' : 'error');
+          if (status === 'sent') {
+            toast.success('Email de bienvenida enviado.');
+          } else {
+            toast.error(`Email no entregado: ${error ?? status}`);
+          }
+        });
+      }
     } catch (error) {
       const message =
         error instanceof Error ? error.message : 'Error al validar';
@@ -108,9 +129,12 @@ const ParticipantTableButtons = ({
       <Button
         size='sm'
         variant='ghost'
+        disabled={watchingEmail}
         className={[
-          'h-8 w-8 p-0 transition cursor-pointer',
-          emailStatusClass[row.email_status ?? 'nobody'],
+          'h-8 w-8 p-0 transition disabled:cursor-not-allowed',
+          watchingEmail
+            ? 'text-slate-600 animate-blink'
+            : emailStatusClass[localEmailStatus ?? row.email_status ?? 'nobody'],
         ].join(' ')}
         onClick={() => onEmailLogs?.(row)}
       >

@@ -41,9 +41,9 @@ export const useActivityStore = create<ActivityStore>((set) => ({
 
   createActivity: async (payload) => {
     try {
-      await activityService.create(payload);
-      const activities = await activityService.getAll();
-      set({ activities });
+      const created = await activityService.create(payload);
+      const detail = await activityService.getById(created.id);
+      set((state) => ({ activities: [...state.activities, detail] }));
     } catch {
       throw new Error('Error al crear la actividad');
     }
@@ -52,8 +52,10 @@ export const useActivityStore = create<ActivityStore>((set) => ({
   updateActivity: async (id, payload) => {
     try {
       await activityService.update(id, payload);
-      const activities = await activityService.getAll();
-      set({ activities });
+      const detail = await activityService.getById(id);
+      set((state) => ({
+        activities: state.activities.map((a) => (a.id === id ? detail : a)),
+      }));
     } catch {
       throw new Error('Error al actualizar la actividad');
     }

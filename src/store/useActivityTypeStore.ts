@@ -44,7 +44,6 @@ export const useActivityTypeStore = create<ActivityTypeStore>((set, get) => ({
       set((state) => ({
         activityTypes: [...state.activityTypes, newActivityType],
       }));
-      get().invalidateActivityTypes();
     } catch {
       throw new Error('Error al crear el tipo de actividad');
     }
@@ -58,7 +57,6 @@ export const useActivityTypeStore = create<ActivityTypeStore>((set, get) => ({
           at.id === id ? updated : at,
         ),
       }));
-      get().invalidateActivityTypes();
     } catch {
       throw new Error('Error al actualizar el tipo de actividad');
     }
@@ -70,7 +68,6 @@ export const useActivityTypeStore = create<ActivityTypeStore>((set, get) => ({
       set((state) => ({
         activityTypes: state.activityTypes.filter((at) => at.id !== id),
       }));
-      get().invalidateActivityTypes();
     } catch {
       throw new Error('Error al eliminar el tipo de actividad');
     }

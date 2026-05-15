@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { useClientPagination } from '@/hooks/useClientPagination';
 
 import { University } from 'lucide-react';
 
@@ -187,6 +188,8 @@ const AvailableSlot = () => {
       : true;
     return matchSearch && matchDay && matchType;
   });
+  const { page, totalPages, paginated, pageSize, hasPrev, hasNext, goNext, goPrev, goTo } =
+    useClientPagination(filtered);
 
   if (loading) return <LoadingControl />;
   if (error) return <p className='text-red-400 p-8'>{error}</p>;
@@ -217,7 +220,7 @@ const AvailableSlot = () => {
           />
         </div>
 
-        <TablePanel columns={columns} data={filtered}>
+        <TablePanel columns={columns} data={paginated}>
           {(row) => (
             <AvailableSlotTableButtons
               row={row as AvailableSlots}
@@ -230,6 +233,14 @@ const AvailableSlot = () => {
         <FooterPanel
           filtered={filtered.length}
           elements={availableSlots.length}
+          page={page}
+          totalPages={totalPages}
+          pageSize={pageSize}
+          hasPrev={hasPrev}
+          hasNext={hasNext}
+          onPrev={goPrev}
+          onNext={goNext}
+          onGoTo={goTo}
         />
       </div>
 

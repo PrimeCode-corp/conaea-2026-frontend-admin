@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { useClientPagination } from '@/hooks/useClientPagination';
 
 import { DollarSign } from 'lucide-react';
 
@@ -71,6 +72,8 @@ const QuotaType = () => {
   const filtered = quotaTypes.filter((d) =>
     d.name.toLowerCase().includes(search.toLowerCase()),
   );
+  const { page, totalPages, paginated, pageSize, hasPrev, hasNext, goNext, goPrev, goTo } =
+    useClientPagination(filtered);
 
   // Abre el modal de editar con la fila seleccionada
   const handleEditRequest = (row: Row) => {
@@ -159,7 +162,7 @@ const QuotaType = () => {
           />
         </div>
 
-        <TablePanel columns={columns} data={filtered}>
+        <TablePanel columns={columns} data={paginated}>
           {(row) => (
             <QuotaTypeTableButtons
               row={row as QuotaTypes}
@@ -169,7 +172,18 @@ const QuotaType = () => {
           )}
         </TablePanel>
 
-        <FooterPanel filtered={filtered.length} elements={quotaTypes.length} />
+        <FooterPanel
+          filtered={filtered.length}
+          elements={quotaTypes.length}
+          page={page}
+          totalPages={totalPages}
+          pageSize={pageSize}
+          hasPrev={hasPrev}
+          hasNext={hasNext}
+          onPrev={goPrev}
+          onNext={goNext}
+          onGoTo={goTo}
+        />
       </div>
 
       {/* Modal Eliminar */}

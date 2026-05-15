@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import {
   Sheet,
   SheetContent,
@@ -12,10 +12,13 @@ import {
   XCircle,
   AlertCircle,
   Inbox,
+  RefreshCw,
 } from 'lucide-react';
 import type { ParticipantTableItem } from '@/types/participants.types';
 import type { EmailLog } from '@/types/email-log.types';
 import { emailLogService } from '@/services/emailLogService';
+import { watchEmailStatus } from '@/utils/watchEmailStatus';
+import { toast } from 'sonner';
 
 interface Props {
   open: boolean;
@@ -75,7 +78,7 @@ const EmailLogItem = ({ log }: { log: EmailLog }) => {
   const Icon = cfg.icon;
 
   return (
-    <div className='flex flex-col gap-2 p-4 border-b border-white/5 hover:bg-white/[0.02] transition-colors'>
+    <div className='flex flex-col gap-2 p-4 border-b border-white/5 hover:bg-white/2 transition-colors'>
       <div className='flex items-start justify-between gap-3'>
         <p className='text-sm text-slate-200 font-medium leading-snug flex-1'>
           {log.subject}
@@ -103,7 +106,9 @@ const EmailLogItem = ({ log }: { log: EmailLog }) => {
       {log.error_message && (
         <div className='flex items-start gap-1.5 mt-1 p-2 rounded-lg bg-red-500/5 border border-red-500/20'>
           <AlertCircle className='w-3 h-3 text-red-400 shrink-0 mt-0.5' />
-          <p className='text-xs text-red-400 leading-snug'>{log.error_message}</p>
+          <p className='text-xs text-red-400 leading-snug'>
+            {log.error_message}
+          </p>
         </div>
       )}
     </div>
@@ -115,6 +120,8 @@ const ModalEmailLogs = ({ open, onClose, participant }: Props) => {
   const [count, setCount] = useState(0);
   const [loading, setLoading] = useState(false);
   const [statusFilter, setStatusFilter] = useState<StatusFilter>('');
+  const [resending, setResending] = useState(false);
+  const esRef = useRef<EventSource | null>(null);
 
   useEffect(() => {
     if (!open || !participant) return;
@@ -122,7 +129,8 @@ const ModalEmailLogs = ({ open, onClose, participant }: Props) => {
     setLogs([]);
     // "Fallidos" trae todo del backend y excluye los enviados en cliente,
     // para incluir disabled, pending y cualquier otro estado no-sent.
-    const apiStatus = statusFilter === 'failed' ? undefined : (statusFilter || undefined);
+    const apiStatus =
+      statusFilter === 'failed' ? undefined : statusFilter || undefined;
 
     emailLogService
       .getByParticipant(participant.id, {
@@ -142,9 +150,48 @@ const ModalEmailLogs = ({ open, onClose, participant }: Props) => {
   }, [open, participant, statusFilter]);
 
   const handleClose = () => {
+    esRef.current?.close();
+    esRef.current = null;
     setStatusFilter('');
     setLogs([]);
     onClose();
+  };
+
+  const refreshLogs = (participantId: number) => {
+    const apiStatus =
+      statusFilter === 'failed' ? undefined : statusFilter || undefined;
+    emailLogService
+      .getByParticipant(participantId, { status: apiStatus, page_size: 50 })
+      .then((data) => {
+        const results =
+          statusFilter === 'failed'
+            ? data.results.filter((log) => log.status !== 'sent')
+            : data.results;
+        setLogs(results);
+        setCount(results.length);
+      })
+      .catch(() => {});
+  };
+
+  const handleResend = async () => {
+    if (!participant) return;
+    setResending(true);
+    try {
+      await emailLogService.resend(participant.id);
+      esRef.current?.close();
+      esRef.current = watchEmailStatus(participant.id, (status, error) => {
+        if (status === 'sent') {
+          toast.success('Email reenviado correctamente.');
+        } else {
+          toast.error(`Email no entregado: ${error ?? status}`);
+        }
+        refreshLogs(participant.id);
+      });
+    } catch {
+      toast.error('Error al reenviar el email. Intenta nuevamente.');
+    } finally {
+      setResending(false);
+    }
   };
 
   return (
@@ -175,26 +222,44 @@ const ModalEmailLogs = ({ open, onClose, participant }: Props) => {
         </SheetHeader>
 
         {/* Filtros */}
-        <div className='flex items-center gap-1.5 px-5 py-3 border-b border-white/10 shrink-0'>
-          {STATUS_FILTERS.map((f) => (
-            <button
-              key={f.value}
-              onClick={() => setStatusFilter(f.value)}
-              className={[
-                'px-2.5 py-1 rounded-lg text-xs font-semibold transition-colors',
-                statusFilter === f.value
-                  ? 'bg-[#fbba0e] text-black'
-                  : 'text-slate-400 hover:bg-white/5 hover:text-slate-200',
-              ].join(' ')}
-            >
-              {f.label}
-            </button>
-          ))}
-          {count > 0 && (
-            <span className='ml-auto text-xs text-slate-600'>
-              {count} registro{count !== 1 ? 's' : ''}
-            </span>
-          )}
+        <div className='flex items-center justify-between gap-2 px-5 py-3 border-b border-white/10 shrink-0'>
+          <div className='flex items-center gap-1.5'>
+            {STATUS_FILTERS.map((f) => (
+              <button
+                key={f.value}
+                onClick={() => setStatusFilter(f.value)}
+                className={[
+                  'px-2.5 py-1 rounded-lg text-xs font-semibold transition-colors',
+                  statusFilter === f.value
+                    ? 'bg-[#fbba0e] text-black'
+                    : 'text-slate-400 hover:bg-white/5 hover:text-slate-200',
+                ].join(' ')}
+              >
+                {f.label}
+              </button>
+            ))}
+            {count > 0 && (
+              <span className='text-xs text-slate-600'>
+                {count} registro{count !== 1 ? 's' : ''}
+              </span>
+            )}
+          </div>
+
+          <button
+            onClick={handleResend}
+            disabled={resending}
+            title='Reenviar'
+            className={[
+              'flex items-center justify-center p-2 rounded-lg transition-colors cursor-pointer border border-white/10',
+              resending
+                ? 'text-[#fbba0e] cursor-not-allowed'
+                : 'text-slate-400 hover:bg-white/5 hover:text-slate-200',
+            ].join(' ')}
+          >
+            <RefreshCw
+              className={`h-3.5 w-3.5 ${resending ? 'animate-spin' : ''}`}
+            />
+          </button>
         </div>
 
         {/* Lista */}
@@ -216,7 +281,8 @@ const ModalEmailLogs = ({ open, onClose, participant }: Props) => {
             </div>
           )}
 
-          {!loading && logs.map((log) => <EmailLogItem key={log.id} log={log} />)}
+          {!loading &&
+            logs.map((log) => <EmailLogItem key={log.id} log={log} />)}
         </div>
       </SheetContent>
     </Sheet>

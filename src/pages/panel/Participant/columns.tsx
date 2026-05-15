@@ -148,6 +148,26 @@ export const getParticipantColumns = (onPhotoClick: (url: string) => void) => [
       );
     },
   },
+  {
+    id: 7,
+    label: 'Fecha',
+    key: 'fecha',
+    render: (_: unknown, row: unknown) => {
+      const r = row as { fecha?: string; hora?: string };
+      if (!r.fecha && !r.hora)
+        return <span className='text-slate-500 text-xs'>—</span>;
+      return (
+        <div>
+          <p className='text-slate-200 text-sm leading-tight font-mono'>
+            {r.fecha || '—'}
+          </p>
+          <p className='text-slate-500 text-xs leading-tight mt-0.5'>
+            {r.hora || '—'}
+          </p>
+        </div>
+      );
+    },
+  },
   // {
   //   id: 8,
   //   label: 'Preventa',

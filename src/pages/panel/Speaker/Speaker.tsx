@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { useClientPagination } from '@/hooks/useClientPagination';
 
 import { Mic2 } from 'lucide-react';
 
@@ -87,6 +88,8 @@ const Speaker = () => {
   const filtered = speakers.filter((d) =>
     d.name.toLowerCase().includes(search.toLowerCase()),
   );
+  const { page, totalPages, paginated, pageSize, hasPrev, hasNext, goNext, goPrev, goTo } =
+    useClientPagination(filtered);
 
   // Abre el modal de editar con la fila seleccionada
   const handleEditRequest = (row: Row) => {
@@ -177,7 +180,7 @@ const Speaker = () => {
           />
         </div>
 
-        <TablePanel columns={columns} data={filtered}>
+        <TablePanel columns={columns} data={paginated}>
           {(row) => (
             <SpeakerTableButtons
               row={row as Speakers}
@@ -187,7 +190,18 @@ const Speaker = () => {
           )}
         </TablePanel>
 
-        <FooterPanel filtered={filtered.length} elements={speakers.length} />
+        <FooterPanel
+          filtered={filtered.length}
+          elements={speakers.length}
+          page={page}
+          totalPages={totalPages}
+          pageSize={pageSize}
+          hasPrev={hasPrev}
+          hasNext={hasNext}
+          onPrev={goPrev}
+          onNext={goNext}
+          onGoTo={goTo}
+        />
       </div>
 
       {/* Modal Eliminar */}

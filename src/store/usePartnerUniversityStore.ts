@@ -11,17 +11,20 @@ type PartnerUniversityPayload = Omit<
   'id' | 'is_active' | 'code'
 >;
 
+type PartnerUniversityFilters = { search?: string; quota_type_id?: number };
+
 type PartnerUniversityStore = {
   universities: PartnerUniversityDetail[];
   quotaTypes: QuotaTypeOption[];
   meta: { count: number; next: string | null; previous: string | null } | null;
   page: number;
+  lastParams: PartnerUniversityFilters;
   loading: boolean;
   error: string | null;
 
   fetchUniversities: (
     page?: number,
-    params?: { search?: string; quota_type_id?: number },
+    params?: PartnerUniversityFilters,
   ) => Promise<void>;
   createUniversity: (payload: PartnerUniversityPayload) => Promise<void>;
   updateUniversity: (
@@ -38,21 +41,18 @@ export const usePartnerUniversityStore = create<PartnerUniversityStore>(
     quotaTypes: [],
     meta: null,
     page: 1,
+    lastParams: {},
     loading: false,
     error: null,
 
-    fetchUniversities: async (
-      page = 1,
-      params?: { search?: string; quota_type_id?: number },
-    ) => {
-      set({ loading: true, error: null });
+    fetchUniversities: async (page = 1, params?: PartnerUniversityFilters) => {
+      set({ loading: true, error: null, lastParams: params ?? {}, page });
       try {
         const data = await partnerUniversityService.getAll(page, params);
         set({
           universities: data.results,
           quotaTypes: data.quota_types,
           meta: { count: data.count, next: data.next, previous: data.previous },
-          page,
         });
       } catch {
         set({ error: 'Error al cargar las universidades' });
@@ -75,17 +75,41 @@ export const usePartnerUniversityStore = create<PartnerUniversityStore>(
       } catch {
         throw new Error('Error al actualizar la universidad');
       }
+      try {
+        const detail = await partnerUniversityService.getById(id);
+        set((state) => ({
+          universities: state.universities.map((u) =>
+            u.id === id ? { ...u, ...detail } : u,
+          ),
+        }));
+      } catch { /* keep current state */ }
+      try {
+        const { page, lastParams } = get();
+        const data = await partnerUniversityService.getAll(page, lastParams);
+        set({
+          universities: data.results,
+          meta: { count: data.count, next: data.next, previous: data.previous },
+        });
+      } catch { /* keep optimistic */ }
     },
 
     removeUniversity: async (id) => {
       try {
         await partnerUniversityService.remove(id);
-        set((state) => ({
-          universities: state.universities.filter((u) => u.id !== id),
-        }));
       } catch {
         throw new Error('Error al eliminar la universidad');
       }
+      set((state) => ({
+        universities: state.universities.filter((u) => u.id !== id),
+      }));
+      try {
+        const { page, lastParams } = get();
+        const data = await partnerUniversityService.getAll(page, lastParams);
+        set({
+          universities: data.results,
+          meta: { count: data.count, next: data.next, previous: data.previous },
+        });
+      } catch { /* keep optimistic */ }
     },
 
     invalidateUniversities: async () => {
