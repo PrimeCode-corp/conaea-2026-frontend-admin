@@ -13,6 +13,12 @@ interface ParticipantTableButtonsProps {
   onEmailLogs?: (row: ParticipantTableItem) => void;
 }
 
+const emailStatusClass: Record<string, string> = {
+  sent: 'text-green-400 hover:bg-green-500/10 hover:text-green-300',
+  error: 'text-red-400 hover:bg-red-500/10 hover:text-red-300',
+  nobody: 'text-slate-400 hover:bg-blue-500/10 hover:text-blue-400',
+};
+
 const ParticipantTableButtons = ({
   row,
   onDocuments,
@@ -102,7 +108,10 @@ const ParticipantTableButtons = ({
       <Button
         size='sm'
         variant='ghost'
-        className='h-8 w-8 p-0 transition cursor-pointer text-slate-400 hover:bg-blue-500/10 hover:text-blue-400'
+        className={[
+          'h-8 w-8 p-0 transition cursor-pointer',
+          emailStatusClass[row.email_status ?? 'nobody'],
+        ].join(' ')}
         onClick={() => onEmailLogs?.(row)}
       >
         <Mail className='h-3.5 w-3.5' />

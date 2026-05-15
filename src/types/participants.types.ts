@@ -28,6 +28,7 @@ export interface ParticipantTableItem {
   vouchers: Vouchers[];
   enrollments: Enrollments[];
   is_validated: boolean;
+  email_status: 'nobody' | 'sent' | 'error';
 }
 
 // ── Filtros ────────────────────────────────────────────────────────────
