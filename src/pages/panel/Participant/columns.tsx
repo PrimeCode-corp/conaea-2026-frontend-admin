@@ -158,7 +158,7 @@ export const getParticipantColumns = (onPhotoClick: (url: string) => void) => [
         return <span className='text-slate-500 text-xs'>—</span>;
       return (
         <div>
-          <p className='text-slate-200 text-sm leading-tight font-mono'>
+          <p className='text-slate-200 text-sm leading-tight'>
             {r.fecha || '—'}
           </p>
           <p className='text-slate-500 text-xs leading-tight mt-0.5'>

@@ -20,6 +20,7 @@ type Column = {
   id: number;
   label: string;
   key: string;
+  centered?: boolean;
   render?: (value: unknown, row: Row) => React.ReactNode;
 };
 
@@ -75,7 +76,7 @@ const TablePanel = ({
               {columns.map((col) => (
                 <TableHead
                   key={col.id}
-                  className='text-xs font-semibold uppercase tracking-wider text-slate-500'
+                  className={`text-xs font-semibold uppercase tracking-wider text-slate-500${col.centered ? ' text-center' : ''}`}
                 >
                   {col.label}
                 </TableHead>
@@ -132,7 +133,7 @@ const TablePanel = ({
                     ).padStart(2, '0')}
                   </TableCell>
                   {columns.map((col) => (
-                    <TableCell key={col.id} className='text-sm text-slate-200'>
+                    <TableCell key={col.id} className={`text-sm text-slate-200${col.centered ? ' text-center' : ''}`}>
                       {col.render
                         ? col.render(row[col.key], row)
                         : String(row[col.key] ?? '—')}

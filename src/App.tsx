@@ -22,6 +22,7 @@ import Participant from './pages/panel/Participant';
 import PartnerUniversity from './pages/panel/PartnerUniversity';
 import DynamicCode from './pages/panel/DynamicCode';
 import Delegates from './pages/panel/Delegates';
+import IndividualCup from './pages/panel/IndividualCup';
 
 import './App.css';
 
@@ -51,6 +52,7 @@ function App() {
           <Route path='/partner-university' element={<PartnerUniversity />} />
           <Route path='/dynamic-code' element={<DynamicCode />} />
           <Route path='/delegate' element={<Delegates />} />
+          <Route path='/individual-cup' element={<IndividualCup />} />
 
           <Route path='/change-password' element={<ChangePassword />} />
         </Route>

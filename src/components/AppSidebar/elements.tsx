@@ -7,6 +7,7 @@ import {
   DollarSign,
   ChartSpline,
   Ticket,
+  Trophy,
   University,
   Barcode,
   Users,
@@ -33,6 +34,7 @@ export const navGroups: NavGroup[] = [
     label: 'Registro',
     items: [
       { label: 'Cupos', path: '/available-slot', icon: Ticket },
+      { label: 'Cupos Individuales', path: '/individual-cup', icon: Trophy },
       { label: 'Pre-venta', path: '/pre-sale', icon: ChartSpline },
       { label: 'Tipos de Cuota', path: '/quota-type', icon: DollarSign },
     ],

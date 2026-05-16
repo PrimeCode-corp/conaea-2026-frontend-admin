@@ -19,5 +19,19 @@ export type AvailableSlotDetail = {
   quota_type_id: number;
   mount: number;
   amount: number;
+  reserved: number;
+  used_reserved: number;
+  used_total: number;
   is_active: boolean;
+};
+
+export type PreSaleOption = {
+  id: number;
+  name: string;
+  is_default: boolean;
+};
+
+export type AvailableSlotListResponse = {
+  pre_sales: PreSaleOption[];
+  results: AvailableSlotDetail[];
 };

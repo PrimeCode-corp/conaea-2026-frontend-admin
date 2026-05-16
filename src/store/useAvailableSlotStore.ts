@@ -4,12 +4,14 @@ import { availableSlotService } from '@/services/availableSlotService';
 import type {
   AvailableSlots,
   AvailableSlotDetail,
+  PreSaleOption,
 } from '@/types/availableSlots.types';
 
 type AvailableSlotPayload = Omit<AvailableSlots, 'id' | 'is_active'>;
 
 type AvailableSlotStore = {
   availableSlots: AvailableSlotDetail[];
+  preSales: PreSaleOption[];
   loading: boolean;
   error: string | null;
 
@@ -28,16 +30,15 @@ type AvailableSlotStore = {
 
 export const useAvailableSlotStore = create<AvailableSlotStore>((set, get) => ({
   availableSlots: [],
+  preSales: [],
   loading: false,
   error: null,
 
   fetchAvailableSlots: async (params) => {
-    const { availableSlots } = get();
-    if (availableSlots.length > 0 && !params) return;
     set({ loading: true, error: null });
     try {
-      const availableSlots = await availableSlotService.getAll(params);
-      set({ availableSlots });
+      const data = await availableSlotService.getAll(params);
+      set({ availableSlots: data.results, preSales: data.pre_sales });
     } catch {
       set({ error: 'Error al cargar los cupos disponibles' });
     } finally {
@@ -56,17 +57,19 @@ export const useAvailableSlotStore = create<AvailableSlotStore>((set, get) => ({
   },
 
   updateAvailableSlot: async (id, payload) => {
-    try {
-      await availableSlotService.update(id, payload);
-      const detail = await availableSlotService.getById(id);
-      set((state) => ({
-        availableSlots: state.availableSlots.map((s) =>
-          s.id === id ? detail : s,
-        ),
-      }));
-    } catch {
-      throw new Error('Error al actualizar el cupo');
-    }
+    await availableSlotService.update(id, payload);
+    const detail = await availableSlotService.getById(id);
+    set((state) => ({
+      availableSlots: state.availableSlots.map((s) => {
+        if (s.id !== id) return s;
+        return {
+          ...detail,
+          reserved:      detail.reserved      ?? s.reserved,
+          used_reserved: detail.used_reserved ?? s.used_reserved,
+          used_total:    detail.used_total    ?? s.used_total,
+        };
+      }),
+    }));
   },
 
   removeAvailableSlot: async (id) => {
@@ -81,7 +84,6 @@ export const useAvailableSlotStore = create<AvailableSlotStore>((set, get) => ({
   },
 
   invalidateAvailableSlots: async () => {
-    set({ availableSlots: [] });
     await get().fetchAvailableSlots();
   },
 }));

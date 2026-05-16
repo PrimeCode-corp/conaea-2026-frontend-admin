@@ -5,43 +5,42 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import { useEffect } from 'react';
-import { useAvailableSlotStore } from '@/store/useAvailableSlotStore';
-import { useQuotaTypeStore } from '@/store/useQuotaTypeStore';
+import { useIndividualCupStore } from '@/store/useIndividualCupStore';
 
-interface AvailableSlotFiltersProps {
+const ALL_VALUE = 'all';
+
+interface IndividualCupFiltersProps {
   selectedPreSaleId: number | undefined;
   selectedQuotaTypeId: number | undefined;
   onPreSaleChange: (id: number | undefined) => void;
   onQuotaTypeChange: (id: number | undefined) => void;
 }
 
-const AvailableSlotFilters = ({
+const IndividualCupFilters = ({
   selectedPreSaleId,
   selectedQuotaTypeId,
   onPreSaleChange,
   onQuotaTypeChange,
-}: AvailableSlotFiltersProps) => {
-  const { preSales } = useAvailableSlotStore();
-  const { quotaTypes, fetchQuotaTypes } = useQuotaTypeStore();
+}: IndividualCupFiltersProps) => {
+  const { preSales, quotaTypes } = useIndividualCupStore();
 
-  const ALL_VALUE = 'all';
-
-  useEffect(() => {
-    fetchQuotaTypes();
-  }, []);
-
-  const preSaleSelectValue =
+  const preSaleValue =
     selectedPreSaleId === undefined ? ALL_VALUE : selectedPreSaleId.toString();
 
-  const handlePreSaleChange = (val: string) => {
-    onPreSaleChange(val === ALL_VALUE ? undefined : Number(val));
-  };
+  const quotaTypeValue =
+    selectedQuotaTypeId === undefined
+      ? ALL_VALUE
+      : selectedQuotaTypeId.toString();
 
   return (
     <div className='flex flex-wrap gap-2'>
-      <Select value={preSaleSelectValue} onValueChange={handlePreSaleChange}>
-        <SelectTrigger className='w-44 bg-[#111] border-white/10 text-slate-200 focus:ring-[#fbba0e] focus:ring-offset-0 text-sm'>
+      <Select
+        value={preSaleValue}
+        onValueChange={(val) =>
+          onPreSaleChange(val === ALL_VALUE ? undefined : Number(val))
+        }
+      >
+        <SelectTrigger className='w-48 bg-[#111] border-white/10 text-slate-200 focus:ring-[#fbba0e] focus:ring-offset-0 text-sm'>
           <SelectValue placeholder='Filtrar por preventa' />
         </SelectTrigger>
         <SelectContent className='bg-[#1a1a1a] border-white/10 text-slate-200'>
@@ -51,41 +50,41 @@ const AvailableSlotFilters = ({
           >
             Todas las preventas
           </SelectItem>
-          {preSales.map((preSale) => (
+          {preSales.map((p) => (
             <SelectItem
-              key={preSale.id}
-              value={preSale.id.toString()}
+              key={p.id}
+              value={p.id.toString()}
               className='focus:bg-white/5 focus:text-slate-100'
             >
-              {preSale.name}
+              {p.name}
             </SelectItem>
           ))}
         </SelectContent>
       </Select>
 
       <Select
-        value={selectedQuotaTypeId?.toString() ?? 'all'}
+        value={quotaTypeValue}
         onValueChange={(val) =>
-          onQuotaTypeChange(val === 'all' ? undefined : Number(val))
+          onQuotaTypeChange(val === ALL_VALUE ? undefined : Number(val))
         }
       >
-        <SelectTrigger className='w-52 bg-[#111] border-white/10 text-slate-200 focus:ring-[#fbba0e] focus:ring-offset-0 text-sm'>
-          <SelectValue placeholder='Filtrar por tipo de cuota' />
+        <SelectTrigger className='w-44 bg-[#111] border-white/10 text-slate-200 focus:ring-[#fbba0e] focus:ring-offset-0 text-sm'>
+          <SelectValue placeholder='Filtrar por tipo' />
         </SelectTrigger>
         <SelectContent className='bg-[#1a1a1a] border-white/10 text-slate-200'>
           <SelectItem
-            value='all'
+            value={ALL_VALUE}
             className='focus:bg-white/5 focus:text-slate-100'
           >
             Todos los tipos
           </SelectItem>
-          {quotaTypes.map((type) => (
+          {quotaTypes.map((qt) => (
             <SelectItem
-              key={type.id}
-              value={type.id.toString()}
+              key={qt.id}
+              value={qt.id.toString()}
               className='focus:bg-white/5 focus:text-slate-100'
             >
-              {type.name}
+              {qt.name}
             </SelectItem>
           ))}
         </SelectContent>
@@ -94,4 +93,4 @@ const AvailableSlotFilters = ({
   );
 };
 
-export default AvailableSlotFilters;
+export default IndividualCupFilters;

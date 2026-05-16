@@ -1,9 +1,10 @@
 import type { Field } from '../components/FormFields/formFields.types';
-import type { PreSales } from '@/types/preSales.types';
 import type { QuotaTypes } from '@/types/quotaTypes.types';
 
+type PreSaleOption = { id: number; name: string };
+
 export const getAvailableSlotFields = (
-  preSales: PreSales[],
+  preSales: PreSaleOption[],
   quotaTypes: QuotaTypes[],
 ): Field[] => [
   {

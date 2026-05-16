@@ -1,3 +1,5 @@
+import type React from 'react';
+
 interface Field {
   kind: 'input' | 'select' | 'file' | 'photo' | 'input-checkbox' | 'university-select' | 'search-select';
   id?: string;
@@ -13,6 +15,7 @@ interface Field {
   required?: boolean;
   requiredOnCreate?: boolean;
   condition?: (form: Record<string, unknown>, currentPhoto?: string) => boolean;
+  hint?: (form: Record<string, unknown>) => React.ReactNode;
 }
 
 export type { Field };

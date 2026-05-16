@@ -3,6 +3,7 @@ import api from '@/lib/axios';
 import type {
   AvailableSlots,
   AvailableSlotDetail,
+  AvailableSlotListResponse,
 } from '@/types/availableSlots.types';
 
 type AvailableSlotPayload = Omit<AvailableSlots, 'id' | 'is_active'>;
@@ -10,7 +11,7 @@ type AvailableSlotPayload = Omit<AvailableSlots, 'id' | 'is_active'>;
 export const availableSlotService = {
   getAll: (params?: { pre_sale_id?: number; quota_type_id?: number }) =>
     api
-      .get<AvailableSlotDetail[]>('/register/available-slot/', { params })
+      .get<AvailableSlotListResponse>('/register/available-slot/', { params })
       .then((res) => res.data),
 
   getById: (id: number) =>

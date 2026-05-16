@@ -158,7 +158,12 @@ const FormFields = <T extends Record<string, unknown>>({
           }
         >
           {row.map((field) => (
-            <div key={field.id}>{renderField(field)}</div>
+            <div key={field.id}>
+              {renderField(field)}
+              {field.hint && (
+                <div className='mt-1.5'>{field.hint(form as Record<string, unknown>)}</div>
+              )}
+            </div>
           ))}
         </div>
       ))}

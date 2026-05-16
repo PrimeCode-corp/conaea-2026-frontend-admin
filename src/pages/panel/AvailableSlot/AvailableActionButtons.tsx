@@ -6,7 +6,6 @@ import { Button } from '@/components/ui/button';
 import ModalForm from '../components/modals/ModalForm';
 
 import { useAvailableSlotStore } from '@/store/useAvailableSlotStore';
-import { usePreSaleStore } from '@/store/usePreSaleStore';
 import { useQuotaTypeStore } from '@/store/useQuotaTypeStore';
 
 import {
@@ -29,9 +28,7 @@ const formToPayload = (form: AvailableSlotForm): AvailableSlotPayload => ({
 });
 
 const AvailableSlotActionButtons = () => {
-  const { createAvailableSlot } = useAvailableSlotStore();
-
-  const { preSales } = usePreSaleStore();
+  const { createAvailableSlot, preSales } = useAvailableSlotStore();
 
   const { quotaTypes } = useQuotaTypeStore();
 

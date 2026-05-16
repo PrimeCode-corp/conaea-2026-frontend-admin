@@ -12,7 +12,7 @@ type PartnerUniversityPayload = Omit<
 >;
 
 export const partnerUniversityService = {
-  getAll: (page = 1, params?: { search?: string; quota_type_id?: number }) =>
+  getAll: (page = 1, params?: { search?: string; quota_type_id?: number; page_size?: number }) =>
     api
       .get<PartnerUniversityListResponse>('/participants/partner-universities/', {
         params: { page, ...params },
