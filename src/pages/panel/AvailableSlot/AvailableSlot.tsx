@@ -11,6 +11,7 @@ import LoadingControl from '@/components/LoadingControl';
 
 import { useAvailableSlotStore } from '@/store/useAvailableSlotStore';
 import { useQuotaTypeStore } from '@/store/useQuotaTypeStore';
+import { usePreSaleStore } from '@/store/usePreSaleStore';
 
 import type {
   AvailableSlots,
@@ -58,6 +59,7 @@ const AvailableSlot = () => {
   } = useAvailableSlotStore();
 
   const { quotaTypes } = useQuotaTypeStore();
+  const { preSales: allPreSales, fetchPreSales } = usePreSaleStore();
 
   const [search, setSearch] = useState('');
 
@@ -92,7 +94,7 @@ const AvailableSlot = () => {
 
   useEffect(() => {
     const init = async () => {
-      await fetchAvailableSlots();
+      await Promise.all([fetchAvailableSlots(), fetchPreSales()]);
       const { preSales } = useAvailableSlotStore.getState();
       const def = preSales.find((p) => p.is_default);
       if (def) setSelectedPreSaleId(def.id);
@@ -115,10 +117,11 @@ const AvailableSlot = () => {
 
   const fields = getAvailableSlotFields(preSales, quotaTypes);
 
-  const reserved   = rowToEdit?.reserved ?? 0;
-  const usedDirect = (rowToEdit?.used_total ?? 0) - (rowToEdit?.used_reserved ?? 0);
+  const reserved        = rowToEdit?.reserved ?? 0;
+  const usedDirect      = (rowToEdit?.used_total ?? 0) - (rowToEdit?.used_reserved ?? 0);
+  const editBookingMode = rowToEdit?.pre_sale.booking_mode ?? false;
   const editFields = fields.map((f) =>
-    f.id !== 'amount'
+    f.id !== 'amount' || !editBookingMode
       ? f
       : {
           ...f,
@@ -170,8 +173,9 @@ const AvailableSlot = () => {
       toast.success('Cupo eliminado correctamente.');
       setConfirmOpen(false);
       setRowToDelete(null);
-    } catch {
-      toast.error('Error al eliminar el cupo. Intenta nuevamente.');
+    } catch (err: unknown) {
+      const detail = (err as { response?: { data?: { detail?: string } } })?.response?.data?.detail;
+      toast.error(detail ?? 'Error al eliminar el cupo. Intenta nuevamente.');
     } finally {
       setDeleting(false);
     }
@@ -261,6 +265,11 @@ const AvailableSlot = () => {
   const totalAmount = filtered.reduce((s, c) => s + c.amount, 0);
   const totalUsedTotal = filtered.reduce((s, c) => s + (c.used_total ?? 0), 0);
 
+  const selectedPreSale = selectedPreSaleId
+    ? allPreSales.find((p) => p.id === selectedPreSaleId)
+    : undefined;
+  const isBookingMode = selectedPreSale?.booking_mode ?? false;
+
   const SlotIndicator = ({
     label,
     max,
@@ -305,6 +314,20 @@ const AvailableSlot = () => {
         icon={<University className='h-5 w-5 text-black' />}
         actions={
           <div className='flex items-center gap-6 rounded-xl border border-white/10 bg-[#1a1a1a] px-5 py-2.5'>
+            {selectedPreSale && (
+              <>
+                <span
+                  className={`text-[10px] font-bold uppercase tracking-widest px-2 py-0.5 rounded-full border ${
+                    isBookingMode
+                      ? 'text-purple-400 border-purple-400/30 bg-purple-400/10'
+                      : 'text-sky-400 border-sky-400/30 bg-sky-400/10'
+                  }`}
+                >
+                  {isBookingMode ? 'Reserva' : 'Directo'}
+                </span>
+                <div className='w-px h-8 bg-white/10' />
+              </>
+            )}
             <SlotIndicator
               label='Reserva'
               max={totalReserved}

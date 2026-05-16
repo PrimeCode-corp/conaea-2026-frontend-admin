@@ -72,14 +72,10 @@ export const useDayStore = create<DayStore>((set, get) => ({
   },
 
   removeDay: async (id) => {
-    try {
-      await dayService.remove(id);
-      set((state) => ({
-        days: state.days.filter((d) => d.id !== id),
-      }));
-    } catch {
-      throw new Error('Error al eliminar el día');
-    }
+    await dayService.remove(id);
+    set((state) => ({
+      days: state.days.filter((d) => d.id !== id),
+    }));
   },
 
   invalidateDays: async () => {

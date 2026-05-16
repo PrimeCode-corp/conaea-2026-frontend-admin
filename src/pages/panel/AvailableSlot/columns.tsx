@@ -28,6 +28,7 @@ export const columns = [
     id: 3,
     label: 'Monto',
     key: 'mount',
+    centered: true,
     render: (value: unknown, row: unknown) => {
       const r = row as { quota_type: { currency: string } };
       const currency = r?.quota_type?.currency ?? 'S/';
@@ -62,6 +63,7 @@ export const columns = [
     id: 6,
     label: '',
     key: 'reserved',
+    centered: true,
     render: () => (
       <span className='inline-flex items-center rounded-full px-2.5 py-0.5 font-semibold text-white/30'>
         +
@@ -94,6 +96,7 @@ export const columns = [
     id: 8,
     label: '',
     key: 'amount',
+    centered: true,
     render: () => (
       <span className='inline-flex items-center rounded-full px-2.5 py-0.5 font-semibold text-white/30'>
         =

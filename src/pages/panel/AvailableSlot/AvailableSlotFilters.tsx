@@ -23,6 +23,7 @@ const AvailableSlotFilters = ({
   onQuotaTypeChange,
 }: AvailableSlotFiltersProps) => {
   const { preSales } = useAvailableSlotStore();
+
   const { quotaTypes, fetchQuotaTypes } = useQuotaTypeStore();
 
   const ALL_VALUE = 'all';

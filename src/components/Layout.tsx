@@ -6,8 +6,8 @@ export default function Layout({ children }: { children: React.ReactNode }) {
     <SidebarProvider>
       <AppSidebar />
       <main className='flex flex-col flex-1 min-h-svh min-w-0 bg-[#111] border-l border-white/10'>
-        <div className='sticky top-0 z-10 flex items-center h-10 px-3 border-b border-white/10 bg-[#111] shrink-0'>
-          <SidebarTrigger className='text-slate-200 cursor-pointer border border-white/10 hover:bg-[#fbba0e] hover:text-black transition' />
+        <div className='sticky top-0 z-10 flex items-center h-14 px-3 border-b border-white/10 bg-[#111] shrink-0'>
+          <SidebarTrigger className='text-slate-200  cursor-pointer border border-white/10 hover:bg-[#fbba0e] hover:text-black transition' />
         </div>
         <div
           className='flex-1 overflow-y-auto p-4 sm:p-8'

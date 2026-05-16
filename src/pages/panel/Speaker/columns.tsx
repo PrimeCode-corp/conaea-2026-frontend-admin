@@ -1,7 +1,7 @@
 export const getSpeakerColumns = (onPhotoClick: (url: string) => void) => [
-  { id: 1, label: 'Nombre', key: 'name' },
-  { id: 2, label: 'Título', key: 'title' },
-  { id: 3, label: 'Biografia', key: 'bio' },
+  { id: 1, label: 'Nombre', key: 'name', centered: true },
+  { id: 2, label: 'Título', key: 'title', centered: true },
+  { id: 3, label: 'Biografia', key: 'bio', centered: true },
   {
     id: 4,
     label: 'Foto',

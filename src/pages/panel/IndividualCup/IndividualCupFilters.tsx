@@ -14,6 +14,7 @@ interface IndividualCupFiltersProps {
   selectedQuotaTypeId: number | undefined;
   onPreSaleChange: (id: number | undefined) => void;
   onQuotaTypeChange: (id: number | undefined) => void;
+  disabled?: boolean;
 }
 
 const IndividualCupFilters = ({
@@ -21,11 +22,11 @@ const IndividualCupFilters = ({
   selectedQuotaTypeId,
   onPreSaleChange,
   onQuotaTypeChange,
+  disabled = false,
 }: IndividualCupFiltersProps) => {
   const { preSales, quotaTypes } = useIndividualCupStore();
 
-  const preSaleValue =
-    selectedPreSaleId === undefined ? ALL_VALUE : selectedPreSaleId.toString();
+  const preSaleValue = selectedPreSaleId?.toString() ?? '';
 
   const quotaTypeValue =
     selectedQuotaTypeId === undefined
@@ -36,20 +37,12 @@ const IndividualCupFilters = ({
     <div className='flex flex-wrap gap-2'>
       <Select
         value={preSaleValue}
-        onValueChange={(val) =>
-          onPreSaleChange(val === ALL_VALUE ? undefined : Number(val))
-        }
+        onValueChange={(val) => onPreSaleChange(Number(val))}
       >
         <SelectTrigger className='w-48 bg-[#111] border-white/10 text-slate-200 focus:ring-[#fbba0e] focus:ring-offset-0 text-sm'>
           <SelectValue placeholder='Filtrar por preventa' />
         </SelectTrigger>
         <SelectContent className='bg-[#1a1a1a] border-white/10 text-slate-200'>
-          <SelectItem
-            value={ALL_VALUE}
-            className='focus:bg-white/5 focus:text-slate-100'
-          >
-            Todas las preventas
-          </SelectItem>
           {preSales.map((p) => (
             <SelectItem
               key={p.id}
@@ -62,6 +55,7 @@ const IndividualCupFilters = ({
         </SelectContent>
       </Select>
 
+      <div className={disabled ? 'opacity-40 pointer-events-none select-none' : ''}>
       <Select
         value={quotaTypeValue}
         onValueChange={(val) =>
@@ -89,6 +83,7 @@ const IndividualCupFilters = ({
           ))}
         </SelectContent>
       </Select>
+      </div>
     </div>
   );
 };

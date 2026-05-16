@@ -17,6 +17,7 @@ export const columns = [
     id: 2,
     label: 'Código',
     key: 'code',
+    centered: true,
     render: (value: unknown) => (
       <span className='font-mono text-[#fbba0e] text-sm'>
         {value as string}
@@ -35,6 +36,7 @@ export const columns = [
     id: 4,
     label: 'Abreviación',
     key: 'abbreviation',
+    centered: true,
     render: (value: unknown) => (
       <span className='text-slate-200 text-sm'>{value as string}</span>
     ),
@@ -43,6 +45,7 @@ export const columns = [
     id: 5,
     label: 'País',
     key: 'country',
+    centered: true,
     render: (value: unknown) => (
       <span className='text-slate-200 text-sm'>{value as string}</span>
     ),
@@ -51,6 +54,7 @@ export const columns = [
     id: 6,
     label: 'Región',
     key: 'region',
+    centered: true,
     render: (value: unknown) => (
       <span className='text-slate-200 text-sm'>{value as string}</span>
     ),
@@ -59,6 +63,7 @@ export const columns = [
     id: 7,
     label: 'Ciudad',
     key: 'place',
+    centered: true,
     render: (value: unknown) => (
       <span className='text-slate-200 text-sm'>{value as string}</span>
     ),

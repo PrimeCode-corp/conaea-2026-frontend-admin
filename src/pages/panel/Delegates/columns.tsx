@@ -4,21 +4,22 @@ export const columns = [
     label: 'Nombre',
     key: 'fullname',
     render: (value: unknown) => (
-      <span className='text-slate-200 text-sm font-medium'>{value as string}</span>
+      <span className='text-slate-200 text-sm '>{value as string}</span>
     ),
   },
   {
     id: 2,
     label: 'Tipo',
     key: 'type_delegate',
+    centered: true,
     render: (value: unknown) => {
       const isTitular = value === 'Titular';
       return (
         <span
           className={[
-            'text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full border',
+            'text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full ',
             isTitular
-              ? 'text-green-400 bg-green-500/10 border-green-500/20'
+              ? 'text-green-400 '
               : 'text-blue-400 bg-blue-500/10 border-blue-500/20',
           ].join(' ')}
         >
@@ -31,8 +32,11 @@ export const columns = [
     id: 3,
     label: 'Teléfono',
     key: 'cellphone',
+    centered: true,
     render: (value: unknown) => (
-      <span className='text-slate-400 text-sm font-mono'>{value as string}</span>
+      <span className='text-slate-400 text-sm font-mono'>
+        {value as string}
+      </span>
     ),
   },
   {

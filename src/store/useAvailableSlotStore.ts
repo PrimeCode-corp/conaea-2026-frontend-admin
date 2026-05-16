@@ -73,14 +73,10 @@ export const useAvailableSlotStore = create<AvailableSlotStore>((set, get) => ({
   },
 
   removeAvailableSlot: async (id) => {
-    try {
-      await availableSlotService.remove(id);
-      set((state) => ({
-        availableSlots: state.availableSlots.filter((s) => s.id !== id),
-      }));
-    } catch {
-      throw new Error('Error al eliminar el cupo');
-    }
+    await availableSlotService.remove(id);
+    set((state) => ({
+      availableSlots: state.availableSlots.filter((s) => s.id !== id),
+    }));
   },
 
   invalidateAvailableSlots: async () => {

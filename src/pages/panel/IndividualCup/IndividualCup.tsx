@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from 'react';
 import { useClientPagination } from '@/hooks/useClientPagination';
 
 import { Trophy } from 'lucide-react';
+import { Button } from '@/components/ui/button';
 
 import HeaderPanel from '../components/HeaderPanel';
 import TablePanel from '../components/TablePanel';
@@ -10,6 +11,7 @@ import SearchPanel from '../components/SearchPanel';
 import LoadingControl from '@/components/LoadingControl';
 
 import { useIndividualCupStore } from '@/store/useIndividualCupStore';
+import { usePreSaleStore } from '@/store/usePreSaleStore';
 
 import type { IndividualCup } from '@/types/individualCups.types';
 import {
@@ -61,6 +63,21 @@ const IndividualCupPage = () => {
     number | undefined
   >(undefined);
 
+  const [enablingBookingMode, setEnablingBookingMode] = useState(false);
+
+  const handleEnableBookingMode = async () => {
+    if (!selectedPreSaleId) return;
+    setEnablingBookingMode(true);
+    try {
+      await toggleBookingMode(selectedPreSaleId, true);
+      toast.success('Cupos individuales activados.');
+    } catch {
+      toast.error('Error al activar los cupos individuales.');
+    } finally {
+      setEnablingBookingMode(false);
+    }
+  };
+
   // --- Modal Eliminar ---
   const [confirmOpen, setConfirmOpen] = useState(false);
   const [rowToDelete, setRowToDelete] = useState<Row | null>(null);
@@ -73,11 +90,17 @@ const IndividualCupPage = () => {
   const [editErrors, setEditErrors] = useState<FormErrors>({});
   const [editLoading, setEditLoading] = useState(false);
 
+  const {
+    preSales: allPreSales,
+    fetchPreSales,
+    toggleBookingMode,
+  } = usePreSaleStore();
+
   const initializedRef = useRef(false);
 
   useEffect(() => {
     const init = async () => {
-      await fetchIndividualCups();
+      await Promise.all([fetchIndividualCups(), fetchPreSales()]);
       const { preSales, quotaTypes } = useIndividualCupStore.getState();
       const def = preSales.find((p) => p.is_default);
       if (def) setSelectedPreSaleId(def.id);
@@ -102,7 +125,7 @@ const IndividualCupPage = () => {
   const columns = getIndividualCupColumns(quotaTypes);
   const fields = getIndividualCupFields(preSales, universities);
 
-  const editTotalAmount  = rowToEdit?.total_amount ?? 0;
+  const editTotalAmount = rowToEdit?.total_amount ?? 0;
   const editUsedReserved = rowToEdit?.used ?? 0;
 
   // Suma de 'used' de todos los individual cups del mismo (pre_sale, quota_type)
@@ -111,7 +134,8 @@ const IndividualCupPage = () => {
         .filter(
           (c) =>
             c.pre_sale.id === rowToEdit.pre_sale.id &&
-            c.partner_university.quota_type === rowToEdit.partner_university.quota_type,
+            c.partner_university.quota_type ===
+              rowToEdit.partner_university.quota_type,
         )
         .reduce((s, c) => s + (c.used ?? 0), 0)
     : 0;
@@ -123,7 +147,8 @@ const IndividualCupPage = () => {
           (c) =>
             c.id !== rowToEdit.id &&
             c.pre_sale.id === rowToEdit.pre_sale.id &&
-            c.partner_university.quota_type === rowToEdit.partner_university.quota_type,
+            c.partner_university.quota_type ===
+              rowToEdit.partner_university.quota_type,
         )
         .reduce((s, c) => s + c.currency, 0)
     : 0;
@@ -134,17 +159,26 @@ const IndividualCupPage = () => {
       : {
           ...f,
           hint: (form: Record<string, unknown>) => {
-            const currency  = Number(form.currency) || 0;
-            const direct    = editTotalAmount - (otherReserved + currency);
-            const isInvalid = currency < editUsedReserved || direct < editUsedDirect;
+            const currency = Number(form.currency) || 0;
+            const direct = editTotalAmount - (otherReserved + currency);
+            const isInvalid =
+              currency < editUsedReserved || direct < editUsedDirect;
             return (
               <span className='text-xs text-slate-500'>
                 N. Directo ={' '}
                 <span className='text-slate-400'>{editTotalAmount}</span>
                 {' − '}
-                <span className='text-slate-400'>({otherReserved} + {currency})</span>
+                <span className='text-slate-400'>
+                  ({otherReserved} + {currency})
+                </span>
                 {' = '}
-                <span className={isInvalid ? 'text-red-400 font-medium' : 'text-slate-200 font-medium'}>
+                <span
+                  className={
+                    isInvalid
+                      ? 'text-red-400 font-medium'
+                      : 'text-slate-200 font-medium'
+                  }
+                >
                   {direct}
                 </span>
               </span>
@@ -170,7 +204,7 @@ const IndividualCupPage = () => {
   });
 
   const totalCurrency = filtered.reduce((s, c) => s + c.currency, 0);
-  const totalUsed     = filtered.reduce((s, c) => s + (c.used ?? 0), 0);
+  const totalUsed = filtered.reduce((s, c) => s + (c.used ?? 0), 0);
 
   // total_amount y used_total son iguales para todas las filas del mismo (pre_sale, quota_type)
   // — se deduplicam para no contar doble
@@ -181,11 +215,11 @@ const IndividualCupPage = () => {
     const key = `${c.pre_sale.id}-${c.partner_university.quota_type}`;
     if (!seenCategories.has(key)) {
       seenCategories.add(key);
-      totalAmount    += c.total_amount ?? 0;
-      totalUsedTotal += c.used_total   ?? 0;
+      totalAmount += c.total_amount ?? 0;
+      totalUsedTotal += c.used_total ?? 0;
     }
   }
-  const totalDirect     = totalAmount - totalCurrency;
+  const totalDirect = totalAmount - totalCurrency;
   const totalUsedDirect = totalUsedTotal - totalUsed;
 
   const {
@@ -260,7 +294,8 @@ const IndividualCupPage = () => {
       toast.success('Cupo individual actualizado correctamente.');
       handleEditOpen(false);
     } catch (err: unknown) {
-      const data = (err as { response?: { data?: Record<string, string> } })?.response?.data;
+      const data = (err as { response?: { data?: Record<string, string> } })
+        ?.response?.data;
       if (data && typeof data === 'object') {
         const fieldErrors: FormErrors = {};
         for (const [key, msg] of Object.entries(data)) {
@@ -271,11 +306,18 @@ const IndividualCupPage = () => {
           return;
         }
       }
-      toast.error('Error al actualizar el cupo individual. Intenta nuevamente.');
+      toast.error(
+        'Error al actualizar el cupo individual. Intenta nuevamente.',
+      );
     } finally {
       setEditLoading(false);
     }
   };
+
+  const isBookingMode = selectedPreSaleId
+    ? (allPreSales.find((p) => p.id === selectedPreSaleId)?.booking_mode ??
+      true)
+    : true;
 
   const SlotIndicator = ({
     label,
@@ -293,9 +335,19 @@ const IndividualCupPage = () => {
         {label}
       </span>
       <div className='flex flex-col items-center gap-0.5'>
-        <span className={`font-semibold text-sm ${accent ? 'text-[#fbba0e]' : 'text-slate-200'}`}>{max}</span>
-        <div className={`w-6 h-px ${accent ? 'bg-[#fbba0e]/30' : 'bg-white/20'}`} />
-        <span className={`text-xs ${accent ? 'text-[#fbba0e]/60' : 'text-slate-400'}`}>{used}</span>
+        <span
+          className={`font-semibold text-sm ${accent ? 'text-[#fbba0e]' : 'text-slate-200'}`}
+        >
+          {max}
+        </span>
+        <div
+          className={`w-6 h-px ${accent ? 'bg-[#fbba0e]/30' : 'bg-white/20'}`}
+        />
+        <span
+          className={`text-xs ${accent ? 'text-[#fbba0e]/60' : 'text-slate-400'}`}
+        >
+          {used}
+        </span>
       </div>
     </div>
   );
@@ -311,11 +363,24 @@ const IndividualCupPage = () => {
         icon={<Trophy className='h-5 w-5 text-black' />}
         actions={
           <div className='flex items-center gap-6 rounded-xl border border-white/10 bg-[#1a1a1a] px-5 py-2.5'>
-            <SlotIndicator label='Reserva'  max={totalCurrency}  used={totalUsed} />
+            <SlotIndicator
+              label='Reserva'
+              max={totalCurrency}
+              used={totalUsed}
+            />
             <div className='w-px h-8 bg-white/10' />
-            <SlotIndicator label='Directo'  max={totalDirect}    used={totalUsedDirect} />
+            <SlotIndicator
+              label='Directo'
+              max={totalDirect}
+              used={totalUsedDirect}
+            />
             <div className='w-px h-8 bg-white/10' />
-            <SlotIndicator label='Cantidad' max={totalAmount}    used={totalUsedTotal} accent />
+            <SlotIndicator
+              label='Cantidad'
+              max={totalAmount}
+              used={totalUsedTotal}
+              accent
+            />
           </div>
         }
       />
@@ -323,46 +388,70 @@ const IndividualCupPage = () => {
       <div className='rounded-2xl border border-white/10 bg-[#1a1a1a] shadow-xl'>
         <div className='flex flex-col gap-3 border-b border-white/10 px-6 py-4 sm:flex-row sm:items-center sm:justify-between'>
           <div className='flex flex-wrap items-center gap-2'>
-            <IndividualCupActionButtons
-              selectedPreSaleId={selectedPreSaleId}
-              selectedQuotaTypeId={selectedQuotaTypeId}
-            />
+            <div className={!isBookingMode ? 'opacity-40 pointer-events-none select-none' : ''}>
+              <IndividualCupActionButtons
+                selectedPreSaleId={selectedPreSaleId}
+                selectedQuotaTypeId={selectedQuotaTypeId}
+              />
+            </div>
             <IndividualCupFilters
               selectedPreSaleId={selectedPreSaleId}
               selectedQuotaTypeId={selectedQuotaTypeId}
               onPreSaleChange={setSelectedPreSaleId}
               onQuotaTypeChange={setSelectedQuotaTypeId}
+              disabled={!isBookingMode}
             />
           </div>
-          <SearchPanel
-            search={search}
-            setSearch={setSearch}
-            placeholder='Buscar por universidad...'
-          />
+          <div className={!isBookingMode ? 'opacity-40 pointer-events-none select-none' : ''}>
+            <SearchPanel
+              search={search}
+              setSearch={setSearch}
+              placeholder='Buscar por universidad...'
+            />
+          </div>
         </div>
 
-        <TablePanel columns={columns} data={paginated}>
-          {(row) => (
-            <IndividualCupTableButtons
-              row={row as IndividualCup}
-              onEdit={handleEditRequest}
-              onDelete={handleDeleteRequest}
-            />
+        <div className='relative'>
+          {!isBookingMode && selectedPreSaleId && (
+            <div className='absolute inset-0 z-10 flex flex-col items-center justify-center gap-3 bg-black/60 backdrop-blur-[2px]'>
+              <p className='text-sm font-medium text-slate-300'>
+                Los cupos individuales están deshabilitados
+              </p>
+              <Button
+                size='sm'
+                className='bg-[#fbba0e] text-black font-semibold hover:bg-[#fbba0e]/90 transition'
+                onClick={handleEnableBookingMode}
+                disabled={enablingBookingMode}
+              >
+                {enablingBookingMode ? 'Activando...' : 'Activar cupos individuales'}
+              </Button>
+            </div>
           )}
-        </TablePanel>
+          <div className={!isBookingMode ? 'opacity-40 pointer-events-none select-none' : ''}>
+            <TablePanel columns={columns} data={paginated}>
+              {(row) => (
+                <IndividualCupTableButtons
+                  row={row as IndividualCup}
+                  onEdit={handleEditRequest}
+                  onDelete={handleDeleteRequest}
+                />
+              )}
+            </TablePanel>
 
-        <FooterPanel
-          filtered={filtered.length}
-          elements={individualCups.length}
-          page={page}
-          totalPages={totalPages}
-          pageSize={pageSize}
-          hasPrev={hasPrev}
-          hasNext={hasNext}
-          onPrev={goPrev}
-          onNext={goNext}
-          onGoTo={goTo}
-        />
+            <FooterPanel
+              filtered={filtered.length}
+              elements={individualCups.length}
+              page={page}
+              totalPages={totalPages}
+              pageSize={pageSize}
+              hasPrev={hasPrev}
+              hasNext={hasNext}
+              onPrev={goPrev}
+              onNext={goNext}
+              onGoTo={goTo}
+            />
+          </div>
+        </div>
       </div>
 
       <ModalDelete

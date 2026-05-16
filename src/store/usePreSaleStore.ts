@@ -72,14 +72,10 @@ export const usePreSaleStore = create<PreSaleStore>((set, get) => ({
   },
 
   removePreSale: async (id) => {
-    try {
-      await preSaleService.remove(id);
-      set((state) => ({
-        preSales: state.preSales.filter((p) => p.id !== id),
-      }));
-    } catch {
-      throw new Error('Error al eliminar la preventa');
-    }
+    await preSaleService.remove(id);
+    set((state) => ({
+      preSales: state.preSales.filter((p) => p.id !== id),
+    }));
   },
 
   invalidatePreSales: async () => {

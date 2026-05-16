@@ -4,6 +4,7 @@ export const getActivityColumns = () => [
     id: 2,
     label: 'Día',
     key: 'day',
+    centered: true,
     render: (value: unknown) => {
       const day = value as { title: string };
       return (
@@ -15,6 +16,7 @@ export const getActivityColumns = () => [
     id: 3,
     label: 'Inicio',
     key: 'start_date',
+    centered: true,
     render: (value: unknown) => {
       if (!value) return <span className='text-slate-500 text-xs'>—</span>;
       const time = (value as string).slice(0, 5);
@@ -25,6 +27,7 @@ export const getActivityColumns = () => [
     id: 4,
     label: 'Tipo',
     key: 'activity_type',
+    centered: true,
     render: (value: unknown) => {
       const type = value as { name: string };
       return (
@@ -36,6 +39,7 @@ export const getActivityColumns = () => [
     id: 5,
     label: 'Speaker',
     key: 'speaker',
+    centered: true,
     render: (value: unknown) => {
       const speaker = value as { name: string };
       return speaker ? (
@@ -51,6 +55,7 @@ export const getActivityColumns = () => [
     id: 6,
     label: 'Duración',
     key: 'duration',
+    centered: true,
     render: (value: unknown) => {
       const minutes = value as number;
       const h = Math.floor(minutes / 60);
@@ -60,6 +65,6 @@ export const getActivityColumns = () => [
       return <span className='text-slate-200 text-sm'>{formatted}</span>;
     },
   },
-  { id: 7, label: 'Ubicación', key: 'location' },
-  { id: 8, label: 'Capacidad', key: 'capacity' },
+  { id: 7, label: 'Ubicación', key: 'location', centered: true },
+  { id: 8, label: 'Capacidad', key: 'capacity', centered: true },
 ];

@@ -59,14 +59,10 @@ export const useQuotaTypeStore = create<QuotaTypeStore>((set, get) => ({
   },
 
   removeQuotaType: async (id) => {
-    try {
-      await quotaTypeService.remove(id);
-      set((state) => ({
-        quotaTypes: state.quotaTypes.filter((q) => q.id !== id),
-      }));
-    } catch {
-      throw new Error('Error al eliminar el tipo de cuota');
-    }
+    await quotaTypeService.remove(id);
+    set((state) => ({
+      quotaTypes: state.quotaTypes.filter((q) => q.id !== id),
+    }));
   },
 
   invalidateQuotaTypes: async () => {

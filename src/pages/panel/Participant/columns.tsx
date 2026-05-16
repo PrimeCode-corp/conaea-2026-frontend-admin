@@ -2,6 +2,7 @@ export const getParticipantColumns = (onPhotoClick: (url: string) => void) => [
   {
     id: 1,
     label: 'E',
+    centered: true,
     key: 'is_validated',
     render: (value: unknown) => (
       <div className='relative group w-fit'>
@@ -20,23 +21,41 @@ export const getParticipantColumns = (onPhotoClick: (url: string) => void) => [
   {
     id: 2,
     label: 'Foto',
+    centered: true,
     key: 'photograph',
-    render: (value: unknown) =>
-      value ? (
-        <img
-          src={value as string}
-          alt='foto'
-          onClick={() => onPhotoClick(value as string)}
-          className='w-10 h-10 rounded-sm object-cover object-top border border-white/10 cursor-pointer hover:scale-110 transition'
-        />
-      ) : (
-        <span className='text-slate-500 text-xs'>Sin foto</span>
-      ),
+    render: (value: unknown, row: unknown) => {
+      const name = (row as { full_name?: string })?.full_name ?? '';
+      const initials = name.trim().slice(0, 2).toUpperCase() || '??';
+      const fallback = (
+        <div className='w-10 h-10 rounded-sm border border-white/10 bg-white/5 flex items-center justify-center'>
+          <span className='text-slate-300 text-xs font-semibold'>{initials}</span>
+        </div>
+      );
+      if (!value) return fallback;
+      return (
+        <div className='relative w-10 h-10'>
+          <img
+            src={value as string}
+            alt='foto'
+            onClick={() => onPhotoClick(value as string)}
+            className='w-10 h-10 rounded-sm object-cover object-top border border-white/10 cursor-pointer hover:scale-110 transition'
+            onError={(e) => {
+              e.currentTarget.style.display = 'none';
+              (e.currentTarget.nextElementSibling as HTMLElement | null)?.removeAttribute('hidden');
+            }}
+          />
+          <div hidden className='absolute inset-0 w-10 h-10 rounded-sm border border-white/10 bg-white/5 flex items-center justify-center'>
+            <span className='text-slate-300 text-xs font-semibold'>{initials}</span>
+          </div>
+        </div>
+      );
+    },
   },
   {
     id: 3,
     label: 'Documento',
     key: 'identity_document',
+    centered: true,
     render: (_: unknown, row: unknown) => {
       const r = row as { document_type?: string; identity_document?: string };
 
@@ -152,6 +171,7 @@ export const getParticipantColumns = (onPhotoClick: (url: string) => void) => [
     id: 7,
     label: 'Fecha',
     key: 'fecha',
+    centered: true,
     render: (_: unknown, row: unknown) => {
       const r = row as { fecha?: string; hora?: string };
       if (!r.fecha && !r.hora)

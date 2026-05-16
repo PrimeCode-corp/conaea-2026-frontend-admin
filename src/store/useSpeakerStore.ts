@@ -57,14 +57,10 @@ export const useSpeakerStore = create<SpeakerStore>((set, get) => ({
   },
 
   removeSpeaker: async (id) => {
-    try {
-      await speakerService.remove(id);
-      set((state) => ({
-        speakers: state.speakers.filter((at) => at.id !== id),
-      }));
-    } catch {
-      throw new Error('Error al eliminar el speaker');
-    }
+    await speakerService.remove(id);
+    set((state) => ({
+      speakers: state.speakers.filter((at) => at.id !== id),
+    }));
   },
 
   invalidateSpeaker: async () => {

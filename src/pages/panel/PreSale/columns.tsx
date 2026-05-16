@@ -35,6 +35,7 @@ export const getPreSaleColumns = () => [
     id: 4,
     label: 'Modo',
     key: 'booking_mode',
+    centered: true,
     render: (value: unknown) =>
       value ? (
         <span className='text-xs font-medium uppercase text-amber-400'>

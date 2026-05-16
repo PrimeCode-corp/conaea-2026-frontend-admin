@@ -93,12 +93,11 @@ const Day = () => {
       toast.success('Día eliminado correctamente.');
       setConfirmOpen(false);
       setRowToDelete(null);
-    } catch {
-      toast.error(
-        'Error al eliminar el tipo de actividad. Intenta nuevamente.',
-      );
+    } catch (err: unknown) {
+      const detail = (err as { response?: { data?: { detail?: string } } })?.response?.data?.detail;
+      toast.error(detail ?? 'Error al eliminar el día. Intenta nuevamente.');
     } finally {
-      setDeleting(false); // 👈 siempre se ejecuta, salga bien o mal
+      setDeleting(false);
     }
   };
 

@@ -63,14 +63,10 @@ export const useActivityTypeStore = create<ActivityTypeStore>((set, get) => ({
   },
 
   removeActivityType: async (id) => {
-    try {
-      await activityTypeService.remove(id);
-      set((state) => ({
-        activityTypes: state.activityTypes.filter((at) => at.id !== id),
-      }));
-    } catch {
-      throw new Error('Error al eliminar el tipo de actividad');
-    }
+    await activityTypeService.remove(id);
+    set((state) => ({
+      activityTypes: state.activityTypes.filter((at) => at.id !== id),
+    }));
   },
 
   invalidateActivityTypes: async () => {

@@ -112,10 +112,11 @@ const PreSale = () => {
       toast.success('Preventa eliminada correctamente.');
       setConfirmOpen(false);
       setRowToDelete(null);
-    } catch {
-      toast.error('Error al eliminar la preventa. Intenta nuevamente.');
+    } catch (err: unknown) {
+      const detail = (err as { response?: { data?: { detail?: string } } })?.response?.data?.detail;
+      toast.error(detail ?? 'Error al eliminar la preventa. Intenta nuevamente.');
     } finally {
-      setDeleting(false); // 👈 siempre se ejecuta, salga bien o mal
+      setDeleting(false);
     }
   };
 

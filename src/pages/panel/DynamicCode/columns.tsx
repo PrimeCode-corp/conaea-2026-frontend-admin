@@ -4,7 +4,8 @@ const formatDateTime = (value: unknown) => {
   const date = new Date(normalized);
   return (
     <span className='text-slate-200 text-sm'>
-      {date.toLocaleDateString('es-PE')} {date.toLocaleTimeString('es-PE', { hour: '2-digit', minute: '2-digit' })}
+      {date.toLocaleDateString('es-PE')}{' '}
+      {date.toLocaleTimeString('es-PE', { hour: '2-digit', minute: '2-digit' })}
     </span>
   );
 };
@@ -14,14 +15,18 @@ export const columns = [
     id: 1,
     label: 'Código',
     key: 'code',
+    centered: true,
     render: (value: unknown) => (
-      <span className='font-mono text-[#fbba0e] text-sm'>{value as string}</span>
+      <span className='font-mono text-[#fbba0e] text-sm'>
+        {value as string}
+      </span>
     ),
   },
   {
     id: 2,
     label: 'Estado',
     key: 'status',
+    centered: true,
     render: (value: unknown) => {
       const status = value as string;
       const color =
@@ -44,8 +49,10 @@ export const columns = [
     label: 'Fecha de uso',
     key: 'used_at',
     render: (value: unknown) =>
-      value
-        ? formatDateTime(value)
-        : <span className='text-slate-500 text-xs'>Sin uso</span>,
+      value ? (
+        formatDateTime(value)
+      ) : (
+        <span className='text-slate-500 text-xs'>Sin uso</span>
+      ),
   },
 ];
