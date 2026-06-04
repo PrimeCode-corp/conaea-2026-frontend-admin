@@ -6,7 +6,7 @@ export interface EmailLog {
   subject: string;
   email_type: string;
   email_type_display: string;
-  status: 'sent' | 'failed' | 'pending' | 'disabled';
+  status: 'sent' | 'failed' | 'pending' | 'disabled' | 'timeout';
   status_display: string;
   error_message: string | null;
   sent_at: string | null;
