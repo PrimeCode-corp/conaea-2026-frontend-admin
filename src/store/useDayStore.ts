@@ -1,5 +1,6 @@
 import { create } from 'zustand';
 import { dayService } from '@/services/dayService';
+import { createCrudActions } from './createCrudActions';
 import type { Days } from '@/types/days.types';
 import type { Activities } from '@/types/activities.types';
 
@@ -19,67 +20,37 @@ type DayStore = {
   invalidateDays: () => Promise<void>;
 };
 
-export const useDayStore = create<DayStore>((set, get) => ({
-  days: [],
-  activities: [],
-  loading: false,
-  error: null,
+export const useDayStore = create<DayStore>((set, get) => {
+  const crud = createCrudActions<DayStore, Days, DayPayload>(set, get, {
+    key: 'days',
+    service: dayService,
+    loadError: 'Error al cargar los días',
+    createError: 'Error al crear el día',
+    updateError: 'Error al actualizar el día',
+  });
 
-  fetchDays: async () => {
-    const { days } = get();
-    if (days.length > 0) return;
-    set({ loading: true, error: null });
-    try {
-      const days = await dayService.getAll();
-      set({ days });
-    } catch {
-      set({ error: 'Error al cargar los días' });
-    } finally {
-      set({ loading: false });
-    }
-  },
+  return {
+    days: [],
+    activities: [],
+    loading: false,
+    error: null,
 
-  fetchActivities: async (dayId) => {
-    set({ loading: true, error: null });
-    try {
-      const activities = await dayService.getActivities(dayId);
-      set({ activities });
-    } catch {
-      set({ error: 'Error al cargar actividades' });
-    } finally {
-      set({ loading: false });
-    }
-  },
+    fetchDays: crud.fetch,
+    createDay: crud.create,
+    updateDay: crud.update,
+    removeDay: crud.remove,
+    invalidateDays: crud.invalidate,
 
-  createDay: async (payload) => {
-    try {
-      const newDay = await dayService.create(payload);
-      set((state) => ({ days: [...state.days, newDay] }));
-    } catch {
-      throw new Error('Error al crear el día');
-    }
-  },
-
-  updateDay: async (id, payload) => {
-    try {
-      const updated = await dayService.update(id, payload);
-      set((state) => ({
-        days: state.days.map((d) => (d.id === id ? updated : d)),
-      }));
-    } catch {
-      throw new Error('Error al actualizar el día');
-    }
-  },
-
-  removeDay: async (id) => {
-    await dayService.remove(id);
-    set((state) => ({
-      days: state.days.filter((d) => d.id !== id),
-    }));
-  },
-
-  invalidateDays: async () => {
-    set({ days: [] });
-    await get().fetchDays();
-  },
-}));
+    fetchActivities: async (dayId) => {
+      set({ loading: true, error: null });
+      try {
+        const activities = await dayService.getActivities(dayId);
+        set({ activities });
+      } catch {
+        set({ error: 'Error al cargar actividades' });
+      } finally {
+        set({ loading: false });
+      }
+    },
+  };
+});

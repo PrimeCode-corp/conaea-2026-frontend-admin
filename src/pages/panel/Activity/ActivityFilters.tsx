@@ -35,13 +35,13 @@ const ActivityFilters = ({
     fetchDays();
     fetchActivityTypes();
     fetchSpeakers();
-  }, []);
+  }, [fetchDays, fetchActivityTypes, fetchSpeakers]);
 
   useEffect(() => {
     if (days.length > 0 && selectedDayId === undefined) {
       onDayChange(days[0].id);
     }
-  }, [days]);
+  }, [days, selectedDayId, onDayChange]);
 
   return (
     <div className='flex flex-wrap gap-2'>

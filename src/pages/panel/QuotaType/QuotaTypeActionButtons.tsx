@@ -1,65 +1,27 @@
-import { useState } from 'react';
-
 import { Plus, CalendarDays } from 'lucide-react';
 
 import { Button } from '@/components/ui/button';
 import ModalForm from '../components/modals/ModalForm';
+import { useResourceForm } from '@/hooks/useResourceForm';
 
 import { useQuotaTypeStore } from '@/store/useQuotaTypeStore';
-import {
-  type QuotaTypeForm,
-  type FormErrors,
-  emptyForm,
-} from './quotaType.types';
+import { type QuotaTypeForm, emptyForm } from './quotaType.types';
 
 import { fields } from './fields';
-import { validate } from '@/utils/validations';
-
-import { toast } from 'sonner'; // 👈 agregar
 
 const QuotaTypeActionButtons = () => {
   const { createQuotaType } = useQuotaTypeStore();
 
-  // Modal Crear
-  const [createOpen, setCreateOpen] = useState(false);
-
-  const [createForm, setCreateForm] = useState<QuotaTypeForm>(emptyForm);
-
-  const [createErrors, setCreateErrors] = useState<FormErrors>({});
-
-  const [createLoading, setCreateLoading] = useState(false);
-
-  // Handlers Crear
-  const handleCreateChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    setCreateForm((prev) => ({ ...prev, [e.target.name]: e.target.value }));
-    setCreateErrors((prev) => ({ ...prev, [e.target.name]: undefined }));
-  };
-
-  const handleCreateSubmit = async () => {
-    if (!validate(createForm, fields, setCreateErrors)) return;
-    setCreateLoading(true);
-    try {
-      await createQuotaType({
-        name: createForm.name,
-        currency: createForm.currency,
-      });
-      toast.success('Tipo de cuota creado correctamente.'); // 👈
-      setCreateForm(emptyForm);
-      setCreateOpen(false);
-    } catch {
-      toast.error('Error al crear el día. Intenta nuevamente.'); // 👈
-    } finally {
-      setCreateLoading(false);
-    }
-  };
-
-  const handleCreateOpenChange = (val: boolean) => {
-    setCreateOpen(val);
-    if (!val) {
-      setCreateForm(emptyForm);
-      setCreateErrors({});
-    }
-  };
+  const create = useResourceForm<QuotaTypeForm, QuotaTypeForm>({
+    emptyForm,
+    fields,
+    toPayload: (f) => ({ name: f.name, currency: f.currency }),
+    submit: createQuotaType,
+    messages: {
+      success: 'Tipo de cuota creado correctamente.',
+      error: 'Error al crear el tipo de cuota. Intenta nuevamente.',
+    },
+  });
 
   return (
     <div className='flex flex-wrap gap-2'>
@@ -67,7 +29,7 @@ const QuotaTypeActionButtons = () => {
       <Button
         size='sm'
         className='gap-1.5 bg-[#fbba0e] text-black font-semibold hover:bg-[#fbba0e]/90 transition'
-        onClick={() => setCreateOpen(true)}
+        onClick={() => create.setOpen(true)}
       >
         <Plus className='h-4 w-4' />
         Nuevo
@@ -76,15 +38,15 @@ const QuotaTypeActionButtons = () => {
       {/* ── Modal Crear ── */}
       <ModalForm
         mode='create'
-        open={createOpen}
-        onOpenChange={handleCreateOpenChange}
+        open={create.open}
+        onOpenChange={create.handleOpenChange}
         fields={fields}
-        form={createForm}
-        errors={createErrors}
-        onChange={handleCreateChange}
-        onSubmit={handleCreateSubmit}
-        loading={createLoading}
-        title='Nuevo Día'
+        form={create.form}
+        errors={create.errors}
+        onChange={create.handleChange}
+        onSubmit={create.handleSubmit}
+        loading={create.loading}
+        title='Nuevo Tipo de Cuota'
         description='Completa los campos.'
         icon={<CalendarDays className='h-4 w-4 text-black' />}
       />

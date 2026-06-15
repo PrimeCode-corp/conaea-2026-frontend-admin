@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import { useClientPagination } from '@/hooks/useClientPagination';
+import { useCrudPanel } from '@/hooks/useCrudPanel';
 
 import { University } from 'lucide-react';
 
@@ -19,11 +20,12 @@ import type {
 } from '@/types/availableSlots.types';
 import {
   type AvailableSlotForm,
-  type FormErrors,
   type AvailableSlotPayload,
   emptyForm,
+  formToPayload,
 } from './availableSlot.types';
 
+import SlotIndicator from '../components/SlotIndicator';
 import AvailableSlotActionButtons from './AvailableActionButtons';
 import AvailableSlotTableButtons from './AvailableSlotTableButtons';
 
@@ -33,19 +35,8 @@ import AvailableSlotFilters from './AvailableSlotFilters';
 
 import { columns } from './columns';
 import { getAvailableSlotFields } from './fields';
-import { validate } from '@/utils/validations';
 
-import { Toaster } from 'sonner'; // 👈 agregar
-import { toast } from 'sonner';
-
-type Row = Record<string, unknown>;
-
-const formToPayload = (form: AvailableSlotForm): AvailableSlotPayload => ({
-  pre_sale: Number(form.pre_sale),
-  quota_type: Number(form.quota_type),
-  mount: Number(form.mount),
-  amount: Number(form.amount),
-});
+import { Toaster } from 'sonner';
 
 const AvailableSlot = () => {
   const {
@@ -62,24 +53,6 @@ const AvailableSlot = () => {
   const { preSales: allPreSales, fetchPreSales } = usePreSaleStore();
 
   const [search, setSearch] = useState('');
-
-  // --- Modal Eliminar ---
-  const [confirmOpen, setConfirmOpen] = useState(false);
-
-  const [rowToDelete, setRowToDelete] = useState<Row | null>(null);
-
-  const [deleting, setDeleting] = useState(false);
-
-  // --- Modal Editar (el padre controla qué fila se edita) ---
-  const [editOpen, setEditOpen] = useState(false);
-
-  const [rowToEdit, setRowToEdit] = useState<AvailableSlotDetail | null>(null);
-
-  const [editForm, setEditForm] = useState<AvailableSlotForm>(emptyForm);
-
-  const [editErrors, setEditErrors] = useState<FormErrors>({});
-
-  const [editLoading, setEditLoading] = useState(false);
 
   // --- Filtros ---
   const [selectedPreSaleId, setSelectedPreSaleId] = useState<
@@ -101,129 +74,72 @@ const AvailableSlot = () => {
       initializedRef.current = true;
     };
     init();
-  }, []);
-
-  useEffect(() => {
-    if (editOpen && rowToEdit) {
-      setEditForm({
-        pre_sale: rowToEdit.pre_sale.id.toString(),
-        quota_type: rowToEdit.quota_type.id.toString(),
-        mount: rowToEdit.mount.toString(),
-        amount: rowToEdit.amount.toString(),
-      });
-      setEditErrors({});
-    }
-  }, [editOpen, rowToEdit]);
+  }, [fetchAvailableSlots, fetchPreSales]);
 
   const fields = getAvailableSlotFields(preSales, quotaTypes);
 
-  const reserved        = rowToEdit?.reserved ?? 0;
-  const usedDirect      = (rowToEdit?.used_total ?? 0) - (rowToEdit?.used_reserved ?? 0);
-  const editBookingMode = rowToEdit?.pre_sale.booking_mode ?? false;
-  const editFields = fields.map((f) =>
-    f.id !== 'amount' || !editBookingMode
-      ? f
-      : {
-          ...f,
-          hint: (form: Record<string, unknown>) => {
-            const amount = Number(form.amount) || 0;
-            const direct = amount - reserved;
-            const isInvalid = direct < usedDirect;
-            return (
-              <span className='text-xs text-slate-500'>
-                N. Directos ={' '}
-                <span className='text-slate-400'>{amount}</span>
-                {' − '}
-                <span className='text-slate-400'>{reserved}</span>
-                {' = '}
-                <span className={isInvalid ? 'text-red-400 font-medium' : 'text-slate-200 font-medium'}>
-                  {direct}
-                </span>
-              </span>
-            );
-          },
-        },
-  );
-
-  const handleEditSelectChange = (id: string, value: string) => {
-    setEditForm((prev) => ({ ...prev, [id]: value }));
-    setEditErrors((prev) => ({ ...prev, [id]: undefined }));
-  };
-
-  // Abre el modal de editar con la fila seleccionada
-  const handleEditRequest = (row: Row) => {
-    const original = availableSlots.find((d) => d.id === (row.id as number));
-    if (original) {
-      setRowToEdit(original); // usa los datos originales (no formateados)
-      setEditOpen(true);
-    }
-  };
-
-  // Handlers eliminar
-  const handleDeleteRequest = (row: Row) => {
-    setRowToDelete(row);
-    setConfirmOpen(true);
-  };
-
-  const handleDeleteConfirm = async () => {
-    if (!rowToDelete) return;
-    setDeleting(true);
-    try {
-      await removeAvailableSlot(rowToDelete.id as number);
-      toast.success('Cupo eliminado correctamente.');
-      setConfirmOpen(false);
-      setRowToDelete(null);
-    } catch (err: unknown) {
-      const detail = (err as { response?: { data?: { detail?: string } } })?.response?.data?.detail;
-      toast.error(detail ?? 'Error al eliminar el cupo. Intenta nuevamente.');
-    } finally {
-      setDeleting(false);
-    }
-  };
-
-  const handleEditOpen = (val: boolean) => {
-    setEditOpen(val);
-    if (!val) {
-      setEditForm(emptyForm);
-      setEditErrors({});
-    }
-  };
-
-  const handleEditChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    setEditForm((prev) => ({ ...prev, [e.target.name]: e.target.value }));
-    setEditErrors((prev) => ({ ...prev, [e.target.name]: undefined }));
-  };
-
-  const handleEditSubmit = async () => {
-    if (!rowToEdit) return;
-    if (!validate(editForm, editFields, setEditErrors)) return;
-    setEditLoading(true);
-    try {
-      await updateAvailableSlot(rowToEdit.id, formToPayload(editForm));
-      toast.success('Cupo actualizado correctamente.');
-      handleEditOpen(false);
-    } catch (err: unknown) {
-      const data = (err as { response?: { data?: Record<string, string> } })?.response?.data;
-      if (data && typeof data === 'object') {
-        const fieldErrors: FormErrors = {};
-        for (const [key, msg] of Object.entries(data)) {
-          if (key in emptyForm) fieldErrors[key as keyof FormErrors] = msg;
-        }
-        if (Object.keys(fieldErrors).length > 0) {
-          setEditErrors(fieldErrors);
-          return;
-        }
-      }
-      toast.error('Error al actualizar el cupo. Intenta nuevamente.');
-    } finally {
-      setEditLoading(false);
-    }
-  };
-
-  const handleDeleteCancel = () => {
-    setConfirmOpen(false);
-    setRowToDelete(null);
-  };
+  const crud = useCrudPanel<
+    AvailableSlotDetail,
+    AvailableSlotForm,
+    AvailableSlotPayload
+  >({
+    items: availableSlots,
+    remove: removeAvailableSlot,
+    update: updateAvailableSlot,
+    getRowLabel: (row) => (row.pre_sale as { name?: string })?.name,
+    emptyForm,
+    fields,
+    // Añade el hint dinámico al campo 'amount' según la fila en edición.
+    getEditFields: (item) => {
+      const reserved = item.reserved ?? 0;
+      const usedDirect = (item.used_total ?? 0) - (item.used_reserved ?? 0);
+      const editBookingMode = item.pre_sale.booking_mode ?? false;
+      return fields.map((f) =>
+        f.id !== 'amount' || !editBookingMode
+          ? f
+          : {
+              ...f,
+              hint: (form: Record<string, unknown>) => {
+                const amount = Number(form.amount) || 0;
+                const direct = amount - reserved;
+                const isInvalid = direct < usedDirect;
+                return (
+                  <span className='text-xs text-slate-500'>
+                    N. Directos ={' '}
+                    <span className='text-slate-400'>{amount}</span>
+                    {' − '}
+                    <span className='text-slate-400'>{reserved}</span>
+                    {' = '}
+                    <span
+                      className={
+                        isInvalid
+                          ? 'text-red-400 font-medium'
+                          : 'text-slate-200 font-medium'
+                      }
+                    >
+                      {direct}
+                    </span>
+                  </span>
+                );
+              },
+            },
+      );
+    },
+    mapToForm: (s) => ({
+      pre_sale: s.pre_sale.id.toString(),
+      quota_type: s.quota_type.id.toString(),
+      mount: s.mount.toString(),
+      amount: s.amount.toString(),
+    }),
+    toPayload: formToPayload,
+    fieldErrors: true,
+    messages: {
+      deleteSuccess: 'Cupo eliminado correctamente.',
+      deleteError: 'Error al eliminar el cupo. Intenta nuevamente.',
+      editSuccess: 'Cupo actualizado correctamente.',
+      editError: 'Error al actualizar el cupo. Intenta nuevamente.',
+    },
+  });
 
   const filtered = availableSlots.filter((d) => {
     const matchSearch = d.pre_sale.name
@@ -269,39 +185,6 @@ const AvailableSlot = () => {
     ? allPreSales.find((p) => p.id === selectedPreSaleId)
     : undefined;
   const isBookingMode = selectedPreSale?.booking_mode ?? false;
-
-  const SlotIndicator = ({
-    label,
-    max,
-    used,
-    accent = false,
-  }: {
-    label: string;
-    max: number;
-    used: number;
-    accent?: boolean;
-  }) => (
-    <div className='flex flex-col items-center gap-1'>
-      <span className='text-[10px] font-semibold uppercase tracking-widest text-slate-500'>
-        {label}
-      </span>
-      <div className='flex flex-col items-center gap-0.5'>
-        <span
-          className={`font-semibold text-sm ${accent ? 'text-[#fbba0e]' : 'text-slate-200'}`}
-        >
-          {max}
-        </span>
-        <div
-          className={`w-6 h-px ${accent ? 'bg-[#fbba0e]/30' : 'bg-white/20'}`}
-        />
-        <span
-          className={`text-xs ${accent ? 'text-[#fbba0e]/60' : 'text-slate-400'}`}
-        >
-          {used}
-        </span>
-      </div>
-    </div>
-  );
 
   if (loading) return <LoadingControl />;
   if (error) return <p className='text-red-400 p-8'>{error}</p>;
@@ -372,8 +255,8 @@ const AvailableSlot = () => {
           {(row) => (
             <AvailableSlotTableButtons
               row={row as AvailableSlots}
-              onEdit={handleEditRequest}
-              onDelete={handleDeleteRequest}
+              onEdit={crud.onEdit}
+              onDelete={crud.onDelete}
             />
           )}
         </TablePanel>
@@ -394,28 +277,28 @@ const AvailableSlot = () => {
 
       {/* Modal Eliminar */}
       <ModalDelete
-        open={confirmOpen}
-        onClose={handleDeleteCancel}
-        onConfirm={handleDeleteConfirm}
-        loading={deleting}
+        open={crud.deleteModal.open}
+        onClose={crud.deleteModal.onClose}
+        onConfirm={crud.deleteModal.onConfirm}
+        loading={crud.deleteModal.loading}
         title='Eliminar cupo'
-        description={rowToDelete?.title as string}
+        description={crud.deleteModal.description}
       />
 
       <ModalForm
         mode='edit'
-        open={editOpen}
-        onOpenChange={handleEditOpen}
-        fields={editFields}
-        form={editForm}
-        errors={editErrors}
-        onChange={handleEditChange}
-        onSubmit={handleEditSubmit}
-        loading={editLoading}
+        open={crud.editModal.open}
+        onOpenChange={crud.editModal.onOpenChange}
+        fields={crud.editFields}
+        form={crud.editModal.form}
+        errors={crud.editModal.errors}
+        onChange={crud.editModal.onChange}
+        onSubmit={crud.editModal.onSubmit}
+        loading={crud.editModal.loading}
         title='Editar Cupo'
         description='Edita los campos del cupo.'
         icon={<University className='h-4 w-4 text-black' />}
-        onValueChange={handleEditSelectChange}
+        onValueChange={crud.editModal.onValueChange}
       />
 
       <Toaster position='bottom-right' richColors theme='dark' />

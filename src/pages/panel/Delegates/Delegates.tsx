@@ -1,33 +1,27 @@
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 import { Contact } from 'lucide-react';
-import { toast, Toaster } from 'sonner';
+import { Toaster } from 'sonner';
+
+import { useCrudPanel } from '@/hooks/useCrudPanel';
+import { useServerTable } from '@/hooks/useServerTable';
 
 import HeaderPanel from '../components/HeaderPanel';
 import TablePanel from '../components/TablePanel';
+import FooterPanel from '../components/FooterPanel';
 import SearchPanel from '../components/SearchPanel';
 import ModalDelete from '../components/modals/ModalDelete';
 import ModalForm from '../components/modals/ModalForm';
+import { getServerFooterProps } from '@/utils/pagination';
 
 import { useDelegateStore } from '@/store/useDelegateStore';
 import { getDelegateFields } from './fields';
-import { validate } from '@/utils/validations';
 import { columns } from './columns';
-import { emptyForm } from './delegate.types';
-import type { DelegateForm, FormErrors } from './delegate.types';
+import { type DelegateForm, emptyForm, formToPayload } from './delegate.types';
 import type { Delegate, DelegatePayload } from '@/types/delegates.types';
 
 import DelegatesActionButtons from './DelegatesActionButtons';
 import DelegatesTableButtons from './DelegatesTableButtons';
 import DelegatesFilters from './DelegatesFilters';
-
-type Row = Record<string, unknown>;
-
-const formToPayload = (form: DelegateForm): DelegatePayload => ({
-  fullname: form.fullname,
-  type_delegate: form.type_delegate as 'Titular' | 'Alterno',
-  cellphone: form.cellphone,
-  partner_university: Number(form.partner_university),
-});
 
 const Delegates = () => {
   const {
@@ -44,18 +38,6 @@ const Delegates = () => {
 
   const [search, setSearch] = useState('');
 
-  // --- Modal Eliminar ---
-  const [confirmOpen, setConfirmOpen] = useState(false);
-  const [rowToDelete, setRowToDelete] = useState<Row | null>(null);
-  const [deleting, setDeleting] = useState(false);
-
-  // --- Modal Editar ---
-  const [editOpen, setEditOpen] = useState(false);
-  const [rowToEdit, setRowToEdit] = useState<Delegate | null>(null);
-  const [editForm, setEditForm] = useState<DelegateForm>(emptyForm);
-  const [editErrors, setEditErrors] = useState<FormErrors>({});
-  const [editLoading, setEditLoading] = useState(false);
-
   // --- Filtros ---
   const [selectedUniversityId, setSelectedUniversityId] = useState<
     number | undefined
@@ -63,96 +45,40 @@ const Delegates = () => {
 
   const fields = getDelegateFields(universities);
 
-  useEffect(() => {
-    const t = setTimeout(
-      () => {
-        fetchDelegates(1, {
-          search: search || undefined,
-          partner_university_id: selectedUniversityId,
-        });
-      },
-      search ? 400 : 0,
-    );
-    return () => clearTimeout(t);
-  }, [search, selectedUniversityId]);
-
-  useEffect(() => {
-    if (editOpen && rowToEdit) {
-      setEditForm({
-        fullname: rowToEdit.fullname,
-        type_delegate: rowToEdit.type_delegate,
-        cellphone: rowToEdit.cellphone,
-        partner_university: rowToEdit.partner_university.id.toString(),
-      });
-      setEditErrors({});
-    }
-  }, [editOpen, rowToEdit]);
-
-  const handleEditRequest = (row: Row) => {
-    const original = delegates.find((d) => d.id === (row.id as number));
-    if (original) {
-      setRowToEdit(original);
-      setEditOpen(true);
-    }
+  const params = {
+    search: search || undefined,
+    partner_university_id: selectedUniversityId,
   };
 
-  const handleDeleteRequest = (row: Row) => {
-    setRowToDelete(row);
-    setConfirmOpen(true);
-  };
+  const { pagination } = useServerTable({
+    fetch: fetchDelegates,
+    params,
+    meta,
+    page,
+    search,
+  });
 
-  const handleDeleteConfirm = async () => {
-    if (!rowToDelete) return;
-    setDeleting(true);
-    try {
-      await removeDelegate(rowToDelete.id as number);
-      toast.success('Delegado eliminado correctamente.');
-      setConfirmOpen(false);
-      setRowToDelete(null);
-    } catch {
-      toast.error('Error al eliminar el delegado. Intenta nuevamente.');
-    } finally {
-      setDeleting(false);
-    }
-  };
-
-  const handleDeleteCancel = () => {
-    setConfirmOpen(false);
-    setRowToDelete(null);
-  };
-
-  const handleEditOpen = (val: boolean) => {
-    setEditOpen(val);
-    if (!val) {
-      setEditForm(emptyForm);
-      setEditErrors({});
-    }
-  };
-
-  const handleEditChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    setEditForm((prev) => ({ ...prev, [e.target.name]: e.target.value }));
-    setEditErrors((prev) => ({ ...prev, [e.target.name]: undefined }));
-  };
-
-  const handleEditSelectChange = (id: string, value: string) => {
-    setEditForm((prev) => ({ ...prev, [id]: value }));
-    setEditErrors((prev) => ({ ...prev, [id]: undefined }));
-  };
-
-  const handleEditSubmit = async () => {
-    if (!rowToEdit) return;
-    if (!validate(editForm, fields, setEditErrors)) return;
-    setEditLoading(true);
-    try {
-      await updateDelegate(rowToEdit.id, formToPayload(editForm));
-      toast.success('Delegado actualizado correctamente.');
-      handleEditOpen(false);
-    } catch {
-      toast.error('Error al actualizar el delegado. Intenta nuevamente.');
-    } finally {
-      setEditLoading(false);
-    }
-  };
+  const crud = useCrudPanel<Delegate, DelegateForm, DelegatePayload>({
+    items: delegates,
+    remove: removeDelegate,
+    update: updateDelegate,
+    getRowLabel: (row) => row.fullname as string,
+    emptyForm,
+    fields,
+    mapToForm: (d) => ({
+      fullname: d.fullname,
+      type_delegate: d.type_delegate,
+      cellphone: d.cellphone,
+      partner_university: d.partner_university.id.toString(),
+    }),
+    toPayload: formToPayload,
+    messages: {
+      deleteSuccess: 'Delegado eliminado correctamente.',
+      deleteError: 'Error al eliminar el delegado. Intenta nuevamente.',
+      editSuccess: 'Delegado actualizado correctamente.',
+      editError: 'Error al actualizar el delegado. Intenta nuevamente.',
+    },
+  });
 
   if (error) return <p className='text-red-400 p-8'>{error}</p>;
 
@@ -168,12 +94,7 @@ const Delegates = () => {
         <div className='flex flex-col gap-3 border-b border-white/10 px-6 py-4 sm:flex-row sm:items-center sm:justify-between'>
           <div className='flex flex-wrap items-center gap-2'>
             <DelegatesActionButtons
-              onCreated={() =>
-                fetchDelegates(1, {
-                  search: search || undefined,
-                  partner_university_id: selectedUniversityId,
-                })
-              }
+              onCreated={() => fetchDelegates(1, params)}
             />
             <DelegatesFilters
               selectedUniversityId={selectedUniversityId}
@@ -191,56 +112,47 @@ const Delegates = () => {
           columns={columns}
           data={delegates}
           loading={loading}
-          pagination={
-            meta
-              ? {
-                  count: meta.count,
-                  next: meta.next,
-                  previous: meta.previous,
-                  page,
-                  onPageChange: (p) =>
-                    fetchDelegates(p, {
-                      search: search || undefined,
-                      partner_university_id: selectedUniversityId,
-                    }),
-                  pageSize: 10,
-                }
-              : undefined
-          }
+          pagination={pagination}
         >
           {(row) => (
             <DelegatesTableButtons
               row={row as Delegate}
-              onEdit={handleEditRequest}
-              onDelete={handleDeleteRequest}
+              onEdit={crud.onEdit}
+              onDelete={crud.onDelete}
             />
           )}
         </TablePanel>
+
+        <FooterPanel
+          {...getServerFooterProps(meta, page, (p) =>
+            fetchDelegates(p, params),
+          )}
+        />
       </div>
 
       <ModalDelete
-        open={confirmOpen}
-        onClose={handleDeleteCancel}
-        onConfirm={handleDeleteConfirm}
-        loading={deleting}
+        open={crud.deleteModal.open}
+        onClose={crud.deleteModal.onClose}
+        onConfirm={crud.deleteModal.onConfirm}
+        loading={crud.deleteModal.loading}
         title='Eliminar delegado'
-        description={rowToDelete?.fullname as string}
+        description={crud.deleteModal.description}
       />
 
       <ModalForm
         mode='edit'
-        open={editOpen}
-        onOpenChange={handleEditOpen}
+        open={crud.editModal.open}
+        onOpenChange={crud.editModal.onOpenChange}
         fields={fields}
-        form={editForm}
-        errors={editErrors}
-        onChange={handleEditChange}
-        onSubmit={handleEditSubmit}
-        loading={editLoading}
+        form={crud.editModal.form}
+        errors={crud.editModal.errors}
+        onChange={crud.editModal.onChange}
+        onSubmit={crud.editModal.onSubmit}
+        loading={crud.editModal.loading}
         title='Editar Delegado'
         description='Edita los campos del delegado.'
         icon={<Contact className='h-4 w-4 text-black' />}
-        onValueChange={handleEditSelectChange}
+        onValueChange={crud.editModal.onValueChange}
       />
 
       <Toaster position='bottom-right' richColors theme='dark' />

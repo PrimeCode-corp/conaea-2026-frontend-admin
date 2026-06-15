@@ -30,7 +30,7 @@ const AvailableSlotFilters = ({
 
   useEffect(() => {
     fetchQuotaTypes();
-  }, []);
+  }, [fetchQuotaTypes]);
 
   const preSaleSelectValue =
     selectedPreSaleId === undefined ? ALL_VALUE : selectedPreSaleId.toString();

@@ -11,20 +11,15 @@ import { individualCupService } from '@/services/individualCupService';
 import {
   type IndividualCupForm,
   type FormErrors,
-  type IndividualCupPayload,
   emptyForm,
+  formToPayload,
 } from './individualCup.types';
 import type { UniversityOption } from '@/types/individualCups.types';
 
 import { getIndividualCupFields } from './fields';
 import { validate } from '@/utils/validations';
+import { mapFieldErrors } from '@/utils/apiError';
 import { toast } from 'sonner';
-
-const formToPayload = (form: IndividualCupForm): IndividualCupPayload => ({
-  pre_sale: Number(form.pre_sale),
-  partner_university: Number(form.partner_university),
-  currency: Number(form.currency),
-});
 
 interface Props {
   selectedPreSaleId?: number;
@@ -116,16 +111,10 @@ const IndividualCupActionButtons = ({ selectedPreSaleId, selectedQuotaTypeId }: 
       setCreateForm(emptyForm);
       setCreateOpen(false);
     } catch (err: unknown) {
-      const data = (err as { response?: { data?: Record<string, string> } })?.response?.data;
-      if (data && typeof data === 'object') {
-        const fieldErrors: FormErrors = {};
-        for (const [key, msg] of Object.entries(data)) {
-          if (key in emptyForm) fieldErrors[key as keyof FormErrors] = msg;
-        }
-        if (Object.keys(fieldErrors).length > 0) {
-          setCreateErrors(fieldErrors);
-          return;
-        }
+      const fieldErrors = mapFieldErrors(err, emptyForm);
+      if (fieldErrors) {
+        setCreateErrors(fieldErrors);
+        return;
       }
       toast.error('Error al crear el cupo individual. Intenta nuevamente.');
     } finally {

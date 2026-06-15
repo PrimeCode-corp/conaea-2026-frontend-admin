@@ -231,7 +231,7 @@ const AdminHome = () => {
 
   useEffect(() => {
     fetchDashboard();
-  }, []);
+  }, [fetchDashboard]);
 
   const p = data?.participants;
   const rawPreSale = data?.active_pre_sale;

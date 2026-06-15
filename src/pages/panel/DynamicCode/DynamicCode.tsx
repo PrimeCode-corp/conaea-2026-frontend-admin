@@ -7,6 +7,7 @@ import HeaderPanel from '../components/HeaderPanel';
 import TablePanel from '../components/TablePanel';
 import FooterPanel from '../components/FooterPanel';
 import LoadingControl from '@/components/LoadingControl';
+import { getServerFooterProps } from '@/utils/pagination';
 
 import { useDynamicCodeStore } from '@/store/useDynamicCodeStore';
 
@@ -29,7 +30,7 @@ const DynamicCode = () => {
 
   useEffect(() => {
     fetchCodes(1);
-  }, []);
+  }, [fetchCodes]);
 
   const handleGenerate = async () => {
     try {
@@ -82,8 +83,7 @@ const DynamicCode = () => {
         />
 
         <FooterPanel
-          filtered={meta?.count ?? codes.length}
-          elements={meta?.count ?? codes.length}
+          {...getServerFooterProps(meta, page, (p) => fetchCodes(p))}
         />
       </div>
 

@@ -41,23 +41,15 @@ export const usePreSaleStore = create<PreSaleStore>((set, get) => ({
   },
 
   createPreSale: async (payload) => {
-    try {
-      const newPreSale = await preSaleService.create(payload);
-      set((state) => ({ preSales: [...state.preSales, newPreSale] }));
-    } catch (err) {
-      throw err;
-    }
+    const newPreSale = await preSaleService.create(payload);
+    set((state) => ({ preSales: [...state.preSales, newPreSale] }));
   },
 
   updatePreSale: async (id, payload) => {
-    try {
-      const updated = await preSaleService.update(id, payload);
-      set((state) => ({
-        preSales: state.preSales.map((p) => (p.id === id ? updated : p)),
-      }));
-    } catch (err) {
-      throw err;
-    }
+    const updated = await preSaleService.update(id, payload);
+    set((state) => ({
+      preSales: state.preSales.map((p) => (p.id === id ? updated : p)),
+    }));
   },
 
   toggleBookingMode: async (id, booking_mode) => {

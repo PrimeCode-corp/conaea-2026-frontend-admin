@@ -1,3 +1,5 @@
+import type { DelegatePayload } from '@/types/delegates.types';
+
 export type DelegateForm = {
   fullname: string;
   type_delegate: string;
@@ -13,3 +15,10 @@ export const emptyForm: DelegateForm = {
   cellphone: '',
   partner_university: '',
 };
+
+export const formToPayload = (form: DelegateForm): DelegatePayload => ({
+  fullname: form.fullname,
+  type_delegate: form.type_delegate as 'Titular' | 'Alterno',
+  cellphone: form.cellphone,
+  partner_university: Number(form.partner_university),
+});

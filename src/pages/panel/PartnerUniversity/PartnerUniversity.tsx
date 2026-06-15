@@ -1,11 +1,14 @@
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
+import { useCrudPanel } from '@/hooks/useCrudPanel';
+import { useServerTable } from '@/hooks/useServerTable';
 
 import { University } from 'lucide-react';
 
 import HeaderPanel from '../components/HeaderPanel';
 import TablePanel from '../components/TablePanel';
-// import FooterPanel from '../components/FooterPanel';
+import FooterPanel from '../components/FooterPanel';
 import SearchPanel from '../components/SearchPanel';
+import { getServerFooterProps } from '@/utils/pagination';
 
 import { usePartnerUniversityStore } from '@/store/usePartnerUniversityStore';
 
@@ -15,9 +18,9 @@ import type {
 } from '@/types/partnerUniversties.types';
 import {
   type PartnerUniversityForm,
-  type FormErrors,
   type PartnerUniversityPayload,
   emptyForm,
+  formToPayload,
 } from './partnerUniversity.types';
 
 import PartnerUniversityActionButtons from './PartnerUniversityActionButtons';
@@ -30,23 +33,10 @@ import PartnerUniversityFilters from './PartnerUniversityFilters';
 
 import { columns } from './columns';
 import { getAvailableSlotFields } from './fields';
-import { validate } from '@/utils/validations';
 
-import { Toaster } from 'sonner'; // 👈 agregar
-import { toast } from 'sonner';
+import { Toaster } from 'sonner';
 
 type Row = Record<string, unknown>;
-
-const formToPayload = (
-  form: PartnerUniversityForm,
-): PartnerUniversityPayload => ({
-  quota_type: Number(form.quota_type),
-  name: form.name,
-  abbreviation: form.abbreviation,
-  country: form.country,
-  region: form.region,
-  place: form.place,
-});
 
 const PartnerUniversity = () => {
   const {
@@ -62,26 +52,6 @@ const PartnerUniversity = () => {
   } = usePartnerUniversityStore();
 
   const [search, setSearch] = useState('');
-
-  // --- Modal Eliminar ---
-  const [confirmOpen, setConfirmOpen] = useState(false);
-
-  const [rowToDelete, setRowToDelete] = useState<Row | null>(null);
-
-  const [deleting, setDeleting] = useState(false);
-
-  // --- Modal Editar (el padre controla qué fila se edita) ---
-  const [editOpen, setEditOpen] = useState(false);
-
-  const [rowToEdit, setRowToEdit] = useState<PartnerUniversityDetail | null>(
-    null,
-  );
-
-  const [editForm, setEditForm] = useState<PartnerUniversityForm>(emptyForm);
-
-  const [editErrors, setEditErrors] = useState<FormErrors>({});
-
-  const [editLoading, setEditLoading] = useState(false);
 
   // --- Modal Delegados ---
   const [delegatesOpen, setDelegatesOpen] = useState(false);
@@ -101,103 +71,47 @@ const PartnerUniversity = () => {
     number | undefined
   >(undefined);
 
-  useEffect(() => {
-    const timeout = setTimeout(
-      () => {
-        fetchUniversities(1, {
-          search: search || undefined,
-          quota_type_id: selectedQuotaTypeId,
-        });
-      },
-      search ? 400 : 0,
-    ); // 👈 debounce solo si hay texto, inmediato si es filtro
+  const params = {
+    search: search || undefined,
+    quota_type_id: selectedQuotaTypeId,
+  };
 
-    return () => clearTimeout(timeout);
-  }, [search, selectedQuotaTypeId]);
-
-  useEffect(() => {
-    if (editOpen && rowToEdit) {
-      setEditForm({
-        quota_type: rowToEdit.quota_type.id.toString(),
-        name: rowToEdit.name,
-        abbreviation: rowToEdit.abbreviation,
-        country: rowToEdit.country,
-        region: rowToEdit.region,
-        place: rowToEdit.place,
-      });
-      setEditErrors({});
-    }
-  }, [editOpen, rowToEdit]);
+  const { pagination } = useServerTable({
+    fetch: fetchUniversities,
+    params,
+    meta,
+    page,
+    search,
+  });
 
   const fields = getAvailableSlotFields(quotaTypes);
 
-  const handleEditSelectChange = (id: string, value: string) => {
-    setEditForm((prev) => ({ ...prev, [id]: value }));
-    setEditErrors((prev) => ({ ...prev, [id]: undefined }));
-  };
-
-  // Abre el modal de editar con la fila seleccionada
-  const handleEditRequest = (row: Row) => {
-    const original = universities.find((d) => d.id === (row.id as number));
-    if (original) {
-      setRowToEdit(original);
-      setEditOpen(true);
-    }
-  };
-
-  // Handlers eliminar
-  const handleDeleteRequest = (row: Row) => {
-    setRowToDelete(row);
-    setConfirmOpen(true);
-  };
-
-  const handleDeleteConfirm = async () => {
-    if (!rowToDelete) return;
-    setDeleting(true);
-    try {
-      await removeUniversity(rowToDelete.id as number);
-      toast.success('Universidad eliminada correctamente.');
-      setConfirmOpen(false);
-      setRowToDelete(null);
-    } catch {
-      toast.error('Error al eliminar la universidad. Intenta nuevamente.');
-    } finally {
-      setDeleting(false);
-    }
-  };
-
-  const handleEditOpen = (val: boolean) => {
-    setEditOpen(val);
-    if (!val) {
-      setEditForm(emptyForm);
-      setEditErrors({});
-    }
-  };
-
-  const handleEditChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    setEditForm((prev) => ({ ...prev, [e.target.name]: e.target.value }));
-    setEditErrors((prev) => ({ ...prev, [e.target.name]: undefined }));
-  };
-
-  const handleEditSubmit = async () => {
-    if (!rowToEdit) return;
-    if (!validate(editForm, fields, setEditErrors)) return;
-    setEditLoading(true);
-    try {
-      await updateUniversity(rowToEdit.id, formToPayload(editForm));
-      toast.success('Universidad actualizada correctamente.');
-      handleEditOpen(false);
-    } catch {
-      toast.error('Error al actualizar la universidad. Intenta nuevamente.');
-    } finally {
-      setEditLoading(false);
-    }
-  };
-
-  const handleDeleteCancel = () => {
-    setConfirmOpen(false);
-    setRowToDelete(null);
-  };
+  const crud = useCrudPanel<
+    PartnerUniversityDetail,
+    PartnerUniversityForm,
+    PartnerUniversityPayload
+  >({
+    items: universities,
+    remove: removeUniversity,
+    update: updateUniversity,
+    emptyForm,
+    fields,
+    mapToForm: (u) => ({
+      quota_type: u.quota_type.id.toString(),
+      name: u.name,
+      abbreviation: u.abbreviation,
+      country: u.country,
+      region: u.region,
+      place: u.place,
+    }),
+    toPayload: formToPayload,
+    messages: {
+      deleteSuccess: 'Universidad eliminada correctamente.',
+      deleteError: 'Error al eliminar la universidad. Intenta nuevamente.',
+      editSuccess: 'Universidad actualizada correctamente.',
+      editError: 'Error al actualizar la universidad. Intenta nuevamente.',
+    },
+  });
 
   if (error) return <p className='text-red-400 p-8'>{error}</p>;
 
@@ -213,12 +127,7 @@ const PartnerUniversity = () => {
         <div className='flex flex-col gap-3 border-b border-white/10 px-6 py-4 sm:flex-row sm:items-center sm:justify-between'>
           <div className='flex flex-wrap items-center gap-2'>
             <PartnerUniversityActionButtons
-              onCreated={() =>
-                fetchUniversities(1, {
-                  search: search || undefined,
-                  quota_type_id: selectedQuotaTypeId,
-                })
-              }
+              onCreated={() => fetchUniversities(1, params)}
             />
             <PartnerUniversityFilters
               selectedQuotaTypeId={selectedQuotaTypeId}
@@ -236,37 +145,23 @@ const PartnerUniversity = () => {
           columns={columns}
           data={universities}
           loading={loading}
-          pagination={
-            meta
-              ? {
-                  count: meta.count,
-                  next: meta.next,
-                  previous: meta.previous,
-                  page,
-                  onPageChange: (p) =>
-                    fetchUniversities(p, {
-                      search: search || undefined,
-                      quota_type_id: selectedQuotaTypeId,
-                    }),
-                  pageSize: 10,
-                }
-              : undefined
-          }
+          pagination={pagination}
         >
           {(row) => (
             <PartnerUniversityTableButtons
               row={row as PartnerUniversities}
-              onEdit={handleEditRequest}
-              onDelete={handleDeleteRequest}
+              onEdit={crud.onEdit}
+              onDelete={crud.onDelete}
               onViewDelegates={handleViewDelegates}
             />
           )}
         </TablePanel>
 
-        {/* <FooterPanel
-          filtered={meta?.count ?? universities.length}
-          elements={meta?.count ?? universities.length}
-        /> */}
+        <FooterPanel
+          {...getServerFooterProps(meta, page, (p) =>
+            fetchUniversities(p, params),
+          )}
+        />
       </div>
 
       {/* Modal Delegados */}
@@ -279,28 +174,28 @@ const PartnerUniversity = () => {
 
       {/* Modal Eliminar */}
       <ModalDelete
-        open={confirmOpen}
-        onClose={handleDeleteCancel}
-        onConfirm={handleDeleteConfirm}
-        loading={deleting}
+        open={crud.deleteModal.open}
+        onClose={crud.deleteModal.onClose}
+        onConfirm={crud.deleteModal.onConfirm}
+        loading={crud.deleteModal.loading}
         title='Eliminar universidad'
-        description={rowToDelete?.name as string}
+        description={crud.deleteModal.description}
       />
 
       <ModalForm
         mode='edit'
-        open={editOpen}
-        onOpenChange={handleEditOpen}
+        open={crud.editModal.open}
+        onOpenChange={crud.editModal.onOpenChange}
         fields={fields}
-        form={editForm}
-        errors={editErrors}
-        onChange={handleEditChange}
-        onSubmit={handleEditSubmit}
-        loading={editLoading}
+        form={crud.editModal.form}
+        errors={crud.editModal.errors}
+        onChange={crud.editModal.onChange}
+        onSubmit={crud.editModal.onSubmit}
+        loading={crud.editModal.loading}
         title='Editar Universidad'
         description='Edita los campos de la universidad.'
         icon={<University className='h-4 w-4 text-black' />}
-        onValueChange={handleEditSelectChange}
+        onValueChange={crud.editModal.onValueChange}
       />
 
       <Toaster position='bottom-right' richColors theme='dark' />

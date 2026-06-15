@@ -20,4 +20,12 @@ export default defineConfig([
       globals: globals.browser,
     },
   },
+  {
+    // Componentes vendidos de shadcn/ui: exportan variantes (cva) y hooks
+    // junto al componente a propósito. La regla de Fast Refresh no aplica aquí.
+    files: ['src/components/ui/**/*.{ts,tsx}'],
+    rules: {
+      'react-refresh/only-export-components': 'off',
+    },
+  },
 ])

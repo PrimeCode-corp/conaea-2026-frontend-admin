@@ -4,10 +4,13 @@ import { Toaster, toast } from 'sonner';
 
 import HeaderPanel from '../components/HeaderPanel';
 import TablePanel from '../components/TablePanel';
+import FooterPanel from '../components/FooterPanel';
 import SearchPanel from '../components/SearchPanel';
 import ModalDelete from '../components/modals/ModalDelete';
+import { getServerFooterProps } from '@/utils/pagination';
 
 import { useParticipantStore } from '@/store/useParticipantStore';
+import { useDisclosure } from '@/hooks/useDisclosure';
 import ParticipantFilters from './ParticipantFilters';
 import { getParticipantColumns } from './columns';
 import ParticipantTableButtons from './ParticipantTableButtons';
@@ -16,7 +19,6 @@ import ModalDocuments from './modals/ModalDocuments';
 import ModalEditParticipant from './modals/ModalEditParticipant';
 import ModalEmailLogs from './modals/ModalEmailLogs';
 import ModalImage from '../components/modals/ModalImage';
-type Row = Record<string, unknown>;
 
 const Participant = () => {
   const {
@@ -42,25 +44,14 @@ const Participant = () => {
   >(undefined);
   const [selectedUniversityCode, setSelectedUniversityCode] =
     useState<string>('');
-  const [documentsOpen, setDocumentsOpen] = useState(false);
-  const [selectedParticipant, setSelectedParticipant] =
-    useState<ParticipantTableItem | null>(null);
-
-  const [editOpen, setEditOpen] = useState(false);
-  const [selectedEditParticipant, setSelectedEditParticipant] =
-    useState<ParticipantTableItem | null>(null);
-
-  const [emailLogsOpen, setEmailLogsOpen] = useState(false);
-  const [selectedEmailLogsParticipant, setSelectedEmailLogsParticipant] =
-    useState<ParticipantTableItem | null>(null);
+  const documents = useDisclosure<ParticipantTableItem>();
+  const edit = useDisclosure<ParticipantTableItem>();
+  const emailLogs = useDisclosure<ParticipantTableItem>();
+  const preview = useDisclosure<string>();
 
   // --- Modal Eliminar ---
-  const [confirmOpen, setConfirmOpen] = useState(false);
-  const [rowToDelete, setRowToDelete] = useState<Row | null>(null);
+  const del = useDisclosure<ParticipantTableItem>();
   const [deleting, setDeleting] = useState(false);
-
-  const [previewOpen, setPreviewOpen] = useState(false);
-  const [previewImage, setPreviewImage] = useState<string | null>(null);
 
   const params = {
     search: search || undefined,
@@ -83,7 +74,7 @@ const Participant = () => {
       setInitialized(true);
     };
     init();
-  }, []);
+  }, [fetchParticipants]);
 
   useEffect(() => {
     if (!initializedRef.current) return;
@@ -101,19 +92,13 @@ const Participant = () => {
     selectedUniversityCode,
   ]);
 
-  const handleDeleteRequest = (row: ParticipantTableItem) => {
-    setRowToDelete(row as unknown as Row);
-    setConfirmOpen(true);
-  };
-
   const handleDeleteConfirm = async () => {
-    if (!rowToDelete) return;
+    if (!del.data) return;
     setDeleting(true);
     try {
-      await removeParticipant(rowToDelete.id as number);
+      await removeParticipant(del.data.id);
       toast.success('Participante eliminado correctamente.');
-      setConfirmOpen(false);
-      setRowToDelete(null);
+      del.hide();
     } catch {
       toast.error('Error al eliminar el participante. Intenta nuevamente.');
     } finally {
@@ -121,30 +106,7 @@ const Participant = () => {
     }
   };
 
-  const handleDeleteCancel = () => {
-    setConfirmOpen(false);
-    setRowToDelete(null);
-  };
-
-  const handleDocumentsRequest = (row: ParticipantTableItem) => {
-    setSelectedParticipant(row);
-    setDocumentsOpen(true);
-  };
-
-  const handleEditRequest = (row: ParticipantTableItem) => {
-    setSelectedEditParticipant(row);
-    setEditOpen(true);
-  };
-
-  const handleEmailLogsRequest = (row: ParticipantTableItem) => {
-    setSelectedEmailLogsParticipant(row);
-    setEmailLogsOpen(true);
-  };
-
-  const columns = getParticipantColumns((url) => {
-    setPreviewImage(url);
-    setPreviewOpen(true);
-  });
+  const columns = getParticipantColumns((url) => preview.show(url));
 
   if (error) return <p className='text-red-400 p-8'>{error}</p>;
 
@@ -199,55 +161,52 @@ const Participant = () => {
           {(row) => (
             <ParticipantTableButtons
               row={row as unknown as ParticipantTableItem}
-              onEdit={handleEditRequest}
-              onDocuments={handleDocumentsRequest}
-              onDelete={handleDeleteRequest}
-              onEmailLogs={handleEmailLogsRequest}
+              onEdit={edit.show}
+              onDocuments={documents.show}
+              onDelete={del.show}
+              onEmailLogs={emailLogs.show}
             />
           )}
         </TablePanel>
+
+        <FooterPanel
+          {...getServerFooterProps(meta, page, (p) =>
+            fetchParticipants(p, params),
+          )}
+        />
       </div>
 
       <ModalDelete
-        open={confirmOpen}
-        onClose={handleDeleteCancel}
+        open={del.open}
+        onClose={del.hide}
         onConfirm={handleDeleteConfirm}
         loading={deleting}
         title='Eliminar participante'
-        description={rowToDelete?.full_name as string}
+        description={del.data?.full_name}
       />
 
       <ModalDocuments
-        open={documentsOpen}
-        onClose={() => {
-          setDocumentsOpen(false);
-          setSelectedParticipant(null);
-        }}
-        participant={selectedParticipant}
+        open={documents.open}
+        onClose={documents.hide}
+        participant={documents.data}
       />
 
       <ModalEditParticipant
-        open={editOpen}
-        onClose={() => {
-          setEditOpen(false);
-          setSelectedEditParticipant(null);
-        }}
-        participant={selectedEditParticipant}
+        open={edit.open}
+        onClose={edit.hide}
+        participant={edit.data}
       />
 
       <ModalEmailLogs
-        open={emailLogsOpen}
-        onClose={() => {
-          setEmailLogsOpen(false);
-          setSelectedEmailLogsParticipant(null);
-        }}
-        participant={selectedEmailLogsParticipant}
+        open={emailLogs.open}
+        onClose={emailLogs.hide}
+        participant={emailLogs.data}
       />
 
       <ModalImage
-        previewOpen={previewOpen}
-        setPreviewOpen={setPreviewOpen}
-        previewImage={previewImage}
+        previewOpen={preview.open}
+        setPreviewOpen={preview.setOpen}
+        previewImage={preview.data}
       />
 
       <Toaster position='bottom-right' richColors theme='dark' />

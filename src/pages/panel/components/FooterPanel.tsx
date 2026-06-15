@@ -4,6 +4,7 @@ import {
   ChevronLeft,
   ChevronRight,
 } from 'lucide-react';
+import PagerButton from './PagerButton';
 
 interface FooterPanelProps {
   filtered: number;
@@ -56,22 +57,18 @@ const FooterPanel = ({
 
       {hasPagination && (
         <div className='flex items-center gap-1'>
-          <button
+          <PagerButton
+            icon={ChevronFirst}
             onClick={() => onGoTo?.(1)}
             disabled={!hasPrev}
             title='Primera página'
-            className='flex h-7 w-7 items-center justify-center rounded-lg border border-white/10 text-slate-400 transition hover:bg-white/5 hover:text-white disabled:cursor-not-allowed disabled:opacity-30 cursor-pointer'
-          >
-            <ChevronFirst className='h-3.5 w-3.5' />
-          </button>
-          <button
+          />
+          <PagerButton
+            icon={ChevronLeft}
             onClick={onPrev}
             disabled={!hasPrev}
             title='Página anterior'
-            className='flex h-7 w-7 items-center justify-center rounded-lg border border-white/10 text-slate-400 transition hover:bg-white/5 hover:text-white disabled:cursor-not-allowed disabled:opacity-30 cursor-pointer'
-          >
-            <ChevronLeft className='h-3.5 w-3.5' />
-          </button>
+          />
 
           {pageNumbers.map((p, i) =>
             p === '…' ? (
@@ -97,22 +94,18 @@ const FooterPanel = ({
             ),
           )}
 
-          <button
+          <PagerButton
+            icon={ChevronRight}
             onClick={onNext}
             disabled={!hasNext}
             title='Página siguiente'
-            className='flex h-7 w-7 items-center justify-center rounded-lg border border-white/10 text-slate-400 transition hover:bg-white/5 hover:text-white disabled:cursor-not-allowed disabled:opacity-30 cursor-pointer'
-          >
-            <ChevronRight className='h-3.5 w-3.5' />
-          </button>
-          <button
+          />
+          <PagerButton
+            icon={ChevronLast}
             onClick={() => onGoTo?.(totalPages!)}
             disabled={!hasNext}
             title='Última página'
-            className='flex h-7 w-7 items-center justify-center rounded-lg border border-white/10 text-slate-400 transition hover:bg-white/5 hover:text-white disabled:cursor-not-allowed disabled:opacity-30 cursor-pointer'
-          >
-            <ChevronLast className='h-3.5 w-3.5' />
-          </button>
+          />
         </div>
       )}
     </div>

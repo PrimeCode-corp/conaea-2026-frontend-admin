@@ -27,3 +27,15 @@ export const emptyForm: ActivityForm = {
   activity_type: '',
   speaker: '',
 };
+
+export const formToPayload = (form: ActivityForm): ActivityPayload => ({
+  name: form.name,
+  order: Number(form.order),
+  start_date: form.start_date,
+  duration: Number(form.duration),
+  location: form.location,
+  capacity: Number(form.capacity),
+  day: Number(form.day),
+  activity_type: Number(form.activity_type),
+  speaker: Number(form.speaker),
+});

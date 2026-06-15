@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import { useClientPagination } from '@/hooks/useClientPagination';
+import { useCrudPanel } from '@/hooks/useCrudPanel';
 
 import { Trophy } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -16,11 +17,12 @@ import { usePreSaleStore } from '@/store/usePreSaleStore';
 import type { IndividualCup } from '@/types/individualCups.types';
 import {
   type IndividualCupForm,
-  type FormErrors,
   type IndividualCupPayload,
   emptyForm,
+  formToPayload,
 } from './individualCup.types';
 
+import SlotIndicator from '../components/SlotIndicator';
 import IndividualCupActionButtons from './IndividualCupActionButtons';
 import IndividualCupTableButtons from './IndividualCupTableButtons';
 import IndividualCupFilters from './IndividualCupFilters';
@@ -30,17 +32,8 @@ import ModalForm from '../components/modals/ModalForm';
 
 import { getIndividualCupColumns } from './columns';
 import { getIndividualCupFields } from './fields';
-import { validate } from '@/utils/validations';
 
 import { Toaster, toast } from 'sonner';
-
-type Row = Record<string, unknown>;
-
-const formToPayload = (form: IndividualCupForm): IndividualCupPayload => ({
-  pre_sale: Number(form.pre_sale),
-  partner_university: Number(form.partner_university),
-  currency: Number(form.currency),
-});
 
 const IndividualCupPage = () => {
   const {
@@ -78,18 +71,6 @@ const IndividualCupPage = () => {
     }
   };
 
-  // --- Modal Eliminar ---
-  const [confirmOpen, setConfirmOpen] = useState(false);
-  const [rowToDelete, setRowToDelete] = useState<Row | null>(null);
-  const [deleting, setDeleting] = useState(false);
-
-  // --- Modal Editar ---
-  const [editOpen, setEditOpen] = useState(false);
-  const [rowToEdit, setRowToEdit] = useState<IndividualCup | null>(null);
-  const [editForm, setEditForm] = useState<IndividualCupForm>(emptyForm);
-  const [editErrors, setEditErrors] = useState<FormErrors>({});
-  const [editLoading, setEditLoading] = useState(false);
-
   const {
     preSales: allPreSales,
     fetchPreSales,
@@ -109,83 +90,85 @@ const IndividualCupPage = () => {
       initializedRef.current = true;
     };
     init();
-  }, []);
-
-  useEffect(() => {
-    if (editOpen && rowToEdit) {
-      setEditForm({
-        pre_sale: rowToEdit.pre_sale.id.toString(),
-        partner_university: rowToEdit.partner_university.id.toString(),
-        currency: rowToEdit.currency.toString(),
-      });
-      setEditErrors({});
-    }
-  }, [editOpen, rowToEdit]);
+  }, [fetchIndividualCups, fetchPreSales]);
 
   const columns = getIndividualCupColumns(quotaTypes);
   const fields = getIndividualCupFields(preSales, universities);
 
-  const editTotalAmount = rowToEdit?.total_amount ?? 0;
-  const editUsedReserved = rowToEdit?.used ?? 0;
+  const crud = useCrudPanel<IndividualCup, IndividualCupForm, IndividualCupPayload>({
+    items: individualCups,
+    remove: removeIndividualCup,
+    update: updateIndividualCup,
+    getRowLabel: (row) =>
+      `${(row.partner_university as { name: string })?.name} — ${(row.pre_sale as { name: string })?.name}`,
+    emptyForm,
+    fields,
+    // Añade el hint dinámico al campo 'currency' según la fila y el resto de cupos.
+    getEditFields: (item) => {
+      const editTotalAmount = item.total_amount ?? 0;
+      const editUsedReserved = item.used ?? 0;
+      const sameCategory = individualCups.filter(
+        (c) =>
+          c.pre_sale.id === item.pre_sale.id &&
+          c.partner_university.quota_type === item.partner_university.quota_type,
+      );
+      const totalUsedReserved = sameCategory.reduce(
+        (s, c) => s + (c.used ?? 0),
+        0,
+      );
+      const editUsedDirect = (item.used_total ?? 0) - totalUsedReserved;
+      const otherReserved = sameCategory
+        .filter((c) => c.id !== item.id)
+        .reduce((s, c) => s + c.currency, 0);
 
-  // Suma de 'used' de todos los individual cups del mismo (pre_sale, quota_type)
-  const totalUsedReserved = rowToEdit
-    ? individualCups
-        .filter(
-          (c) =>
-            c.pre_sale.id === rowToEdit.pre_sale.id &&
-            c.partner_university.quota_type ===
-              rowToEdit.partner_university.quota_type,
-        )
-        .reduce((s, c) => s + (c.used ?? 0), 0)
-    : 0;
-  const editUsedDirect = (rowToEdit?.used_total ?? 0) - totalUsedReserved;
-
-  const otherReserved = rowToEdit
-    ? individualCups
-        .filter(
-          (c) =>
-            c.id !== rowToEdit.id &&
-            c.pre_sale.id === rowToEdit.pre_sale.id &&
-            c.partner_university.quota_type ===
-              rowToEdit.partner_university.quota_type,
-        )
-        .reduce((s, c) => s + c.currency, 0)
-    : 0;
-
-  const editFields = fields.map((f) =>
-    f.id !== 'currency'
-      ? f
-      : {
-          ...f,
-          hint: (form: Record<string, unknown>) => {
-            const currency = Number(form.currency) || 0;
-            const direct = editTotalAmount - (otherReserved + currency);
-            const isInvalid =
-              currency < editUsedReserved || direct < editUsedDirect;
-            return (
-              <span className='text-xs text-slate-500'>
-                N. Directo ={' '}
-                <span className='text-slate-400'>{editTotalAmount}</span>
-                {' − '}
-                <span className='text-slate-400'>
-                  ({otherReserved} + {currency})
-                </span>
-                {' = '}
-                <span
-                  className={
-                    isInvalid
-                      ? 'text-red-400 font-medium'
-                      : 'text-slate-200 font-medium'
-                  }
-                >
-                  {direct}
-                </span>
-              </span>
-            );
-          },
-        },
-  );
+      return fields.map((f) =>
+        f.id !== 'currency'
+          ? f
+          : {
+              ...f,
+              hint: (form: Record<string, unknown>) => {
+                const currency = Number(form.currency) || 0;
+                const direct = editTotalAmount - (otherReserved + currency);
+                const isInvalid =
+                  currency < editUsedReserved || direct < editUsedDirect;
+                return (
+                  <span className='text-xs text-slate-500'>
+                    N. Directo ={' '}
+                    <span className='text-slate-400'>{editTotalAmount}</span>
+                    {' − '}
+                    <span className='text-slate-400'>
+                      ({otherReserved} + {currency})
+                    </span>
+                    {' = '}
+                    <span
+                      className={
+                        isInvalid
+                          ? 'text-red-400 font-medium'
+                          : 'text-slate-200 font-medium'
+                      }
+                    >
+                      {direct}
+                    </span>
+                  </span>
+                );
+              },
+            },
+      );
+    },
+    mapToForm: (c) => ({
+      pre_sale: c.pre_sale.id.toString(),
+      partner_university: c.partner_university.id.toString(),
+      currency: c.currency.toString(),
+    }),
+    toPayload: formToPayload,
+    fieldErrors: true,
+    messages: {
+      deleteSuccess: 'Cupo individual eliminado correctamente.',
+      deleteError: 'Error al eliminar el cupo individual. Intenta nuevamente.',
+      editSuccess: 'Cupo individual actualizado correctamente.',
+      editError: 'Error al actualizar el cupo individual. Intenta nuevamente.',
+    },
+  });
 
   const filtered = individualCups.filter((c) => {
     const matchSearch =
@@ -234,123 +217,10 @@ const IndividualCupPage = () => {
     goTo,
   } = useClientPagination(filtered);
 
-  const handleEditRequest = (row: Row) => {
-    const original = individualCups.find((c) => c.id === (row.id as number));
-    if (original) {
-      setRowToEdit(original);
-      setEditOpen(true);
-    }
-  };
-
-  const handleDeleteRequest = (row: Row) => {
-    setRowToDelete(row);
-    setConfirmOpen(true);
-  };
-
-  const handleDeleteConfirm = async () => {
-    if (!rowToDelete) return;
-    setDeleting(true);
-    try {
-      await removeIndividualCup(rowToDelete.id as number);
-      toast.success('Cupo individual eliminado correctamente.');
-      setConfirmOpen(false);
-      setRowToDelete(null);
-    } catch {
-      toast.error('Error al eliminar el cupo individual. Intenta nuevamente.');
-    } finally {
-      setDeleting(false);
-    }
-  };
-
-  const handleDeleteCancel = () => {
-    setConfirmOpen(false);
-    setRowToDelete(null);
-  };
-
-  const handleEditOpen = (val: boolean) => {
-    setEditOpen(val);
-    if (!val) {
-      setEditForm(emptyForm);
-      setEditErrors({});
-    }
-  };
-
-  const handleEditChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    setEditForm((prev) => ({ ...prev, [e.target.name]: e.target.value }));
-    setEditErrors((prev) => ({ ...prev, [e.target.name]: undefined }));
-  };
-
-  const handleEditSelectChange = (id: string, value: string) => {
-    setEditForm((prev) => ({ ...prev, [id]: value }));
-    setEditErrors((prev) => ({ ...prev, [id]: undefined }));
-  };
-
-  const handleEditSubmit = async () => {
-    if (!rowToEdit) return;
-    if (!validate(editForm, editFields, setEditErrors)) return;
-    setEditLoading(true);
-    try {
-      await updateIndividualCup(rowToEdit.id, formToPayload(editForm));
-      toast.success('Cupo individual actualizado correctamente.');
-      handleEditOpen(false);
-    } catch (err: unknown) {
-      const data = (err as { response?: { data?: Record<string, string> } })
-        ?.response?.data;
-      if (data && typeof data === 'object') {
-        const fieldErrors: FormErrors = {};
-        for (const [key, msg] of Object.entries(data)) {
-          if (key in emptyForm) fieldErrors[key as keyof FormErrors] = msg;
-        }
-        if (Object.keys(fieldErrors).length > 0) {
-          setEditErrors(fieldErrors);
-          return;
-        }
-      }
-      toast.error(
-        'Error al actualizar el cupo individual. Intenta nuevamente.',
-      );
-    } finally {
-      setEditLoading(false);
-    }
-  };
-
   const isBookingMode = selectedPreSaleId
     ? (allPreSales.find((p) => p.id === selectedPreSaleId)?.booking_mode ??
       true)
     : true;
-
-  const SlotIndicator = ({
-    label,
-    max,
-    used,
-    accent = false,
-  }: {
-    label: string;
-    max: number;
-    used: number;
-    accent?: boolean;
-  }) => (
-    <div className='flex flex-col items-center gap-1'>
-      <span className='text-[10px] font-semibold uppercase tracking-widest text-slate-500'>
-        {label}
-      </span>
-      <div className='flex flex-col items-center gap-0.5'>
-        <span
-          className={`font-semibold text-sm ${accent ? 'text-[#fbba0e]' : 'text-slate-200'}`}
-        >
-          {max}
-        </span>
-        <div
-          className={`w-6 h-px ${accent ? 'bg-[#fbba0e]/30' : 'bg-white/20'}`}
-        />
-        <span
-          className={`text-xs ${accent ? 'text-[#fbba0e]/60' : 'text-slate-400'}`}
-        >
-          {used}
-        </span>
-      </div>
-    </div>
-  );
 
   if (loading) return <LoadingControl />;
   if (error) return <p className='text-red-400 p-8'>{error}</p>;
@@ -432,8 +302,8 @@ const IndividualCupPage = () => {
               {(row) => (
                 <IndividualCupTableButtons
                   row={row as IndividualCup}
-                  onEdit={handleEditRequest}
-                  onDelete={handleDeleteRequest}
+                  onEdit={crud.onEdit}
+                  onDelete={crud.onDelete}
                 />
               )}
             </TablePanel>
@@ -455,32 +325,28 @@ const IndividualCupPage = () => {
       </div>
 
       <ModalDelete
-        open={confirmOpen}
-        onClose={handleDeleteCancel}
-        onConfirm={handleDeleteConfirm}
-        loading={deleting}
+        open={crud.deleteModal.open}
+        onClose={crud.deleteModal.onClose}
+        onConfirm={crud.deleteModal.onConfirm}
+        loading={crud.deleteModal.loading}
         title='Eliminar cupo individual'
-        description={
-          rowToDelete
-            ? `${(rowToDelete.partner_university as { name: string })?.name} — ${(rowToDelete.pre_sale as { name: string })?.name}`
-            : ''
-        }
+        description={crud.deleteModal.description}
       />
 
       <ModalForm
         mode='edit'
-        open={editOpen}
-        onOpenChange={handleEditOpen}
-        fields={editFields}
-        form={editForm}
-        errors={editErrors}
-        onChange={handleEditChange}
-        onSubmit={handleEditSubmit}
-        loading={editLoading}
+        open={crud.editModal.open}
+        onOpenChange={crud.editModal.onOpenChange}
+        fields={crud.editFields}
+        form={crud.editModal.form}
+        errors={crud.editModal.errors}
+        onChange={crud.editModal.onChange}
+        onSubmit={crud.editModal.onSubmit}
+        loading={crud.editModal.loading}
         title='Editar Cupo Individual'
         description='Modifica el límite de inscripciones para esta universidad.'
         icon={<Trophy className='h-4 w-4 text-black' />}
-        onValueChange={handleEditSelectChange}
+        onValueChange={crud.editModal.onValueChange}
       />
 
       <Toaster position='bottom-right' richColors theme='dark' />

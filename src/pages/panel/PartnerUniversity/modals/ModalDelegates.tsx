@@ -32,12 +32,25 @@ const ModalDelegates = ({
 
   useEffect(() => {
     if (!open || !universityId) return;
-    setLoading(true);
-    delegateService
-      .list({ partner_university_id: universityId, page_size: 100 })
-      .then((data) => setDelegates(data.results))
-      .catch(() => setDelegates([]))
-      .finally(() => setLoading(false));
+    let active = true;
+    const load = async () => {
+      setLoading(true);
+      try {
+        const data = await delegateService.list({
+          partner_university_id: universityId,
+          page_size: 100,
+        });
+        if (active) setDelegates(data.results);
+      } catch {
+        if (active) setDelegates([]);
+      } finally {
+        if (active) setLoading(false);
+      }
+    };
+    load();
+    return () => {
+      active = false;
+    };
   }, [open, universityId]);
 
   return (

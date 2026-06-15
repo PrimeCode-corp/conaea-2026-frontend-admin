@@ -17,3 +17,11 @@ export const emptyForm: IndividualCupForm = {
   partner_university: '',
   currency: '',
 };
+
+export const formToPayload = (
+  form: IndividualCupForm,
+): IndividualCupPayload => ({
+  pre_sale: Number(form.pre_sale),
+  partner_university: Number(form.partner_university),
+  currency: Number(form.currency),
+});

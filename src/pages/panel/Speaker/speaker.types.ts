@@ -13,3 +13,12 @@ export const emptyForm: SpeakerForm = {
   bio: '',
   photo: null,
 };
+
+export const buildFormData = (form: SpeakerForm): FormData => {
+  const fd = new FormData();
+  fd.append('name', form.name);
+  fd.append('title', form.title);
+  fd.append('bio', form.bio);
+  if (form.photo) fd.append('photo', form.photo);
+  return fd;
+};

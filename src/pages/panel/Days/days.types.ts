@@ -4,3 +4,8 @@ export type DaysForm = {
 };
 
 export type FormErrors = Partial<Record<keyof DaysForm, string>>;
+
+export const emptyForm: DaysForm = {
+  title: '',
+  date: '',
+};

@@ -1,9 +1,8 @@
-import { useState } from 'react';
-
 import { Plus, Zap } from 'lucide-react';
 
 import { Button } from '@/components/ui/button';
 import ModalForm from '../components/modals/ModalForm';
+import { useResourceForm } from '@/hooks/useResourceForm';
 
 import { useActivityStore } from '@/store/useActivityStore';
 import { useDayStore } from '@/store/useDayStore';
@@ -12,81 +11,31 @@ import { useSpeakerStore } from '@/store/useSpeakerStore';
 
 import {
   type ActivityForm,
-  type FormErrors,
   type ActivityPayload,
   emptyForm,
+  formToPayload,
 } from './activity.types';
 
 import { getActivityFields } from './fields';
-import { validate } from '@/utils/validations';
 
-import { toast } from 'sonner'; // 👈 agregar
-
-const formToPayload = (form: ActivityForm): ActivityPayload => ({
-  name: form.name,
-  order: Number(form.order),
-  start_date: form.start_date,
-  duration: Number(form.duration),
-  location: form.location,
-  capacity: Number(form.capacity),
-  day: Number(form.day),
-  activity_type: Number(form.activity_type),
-  speaker: Number(form.speaker),
-});
-
-const ActivityTypeActionButtons = () => {
+const ActivityActionButtons = () => {
   const { createActivity } = useActivityStore();
-
   const { days } = useDayStore();
-
   const { activityTypes } = useActivityTypeStore();
-
   const { speakers } = useSpeakerStore();
-
-  // Modal Crear
-  const [createOpen, setCreateOpen] = useState(false);
-
-  const [createForm, setCreateForm] = useState<ActivityForm>(emptyForm);
-
-  const [createErrors, setCreateErrors] = useState<FormErrors>({});
-
-  const [createLoading, setCreateLoading] = useState(false);
 
   const fields = getActivityFields(days, speakers, activityTypes);
 
-  // Handlers Crear
-  const handleCreateChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    setCreateForm((prev) => ({ ...prev, [e.target.name]: e.target.value }));
-    setCreateErrors((prev) => ({ ...prev, [e.target.name]: undefined }));
-  };
-
-  const handleCreateSubmit = async () => {
-    if (!validate(createForm, fields, setCreateErrors)) return;
-    setCreateLoading(true);
-    try {
-      await createActivity(formToPayload(createForm));
-      toast.success('Actividad creada correctamente.'); // 👈
-      setCreateForm(emptyForm);
-      setCreateOpen(false);
-    } catch {
-      toast.error('Error al crear la actividad. Intenta nuevamente.'); // 👈
-    } finally {
-      setCreateLoading(false);
-    }
-  };
-
-  const handleCreateOpenChange = (val: boolean) => {
-    setCreateOpen(val);
-    if (!val) {
-      setCreateForm(emptyForm);
-      setCreateErrors({});
-    }
-  };
-
-  const handleCreateSelectChange = (id: string, value: string) => {
-    setCreateForm((prev) => ({ ...prev, [id]: value }));
-    setCreateErrors((prev) => ({ ...prev, [id]: undefined }));
-  };
+  const create = useResourceForm<ActivityForm, ActivityPayload>({
+    emptyForm,
+    fields,
+    toPayload: formToPayload,
+    submit: createActivity,
+    messages: {
+      success: 'Actividad creada correctamente.',
+      error: 'Error al crear la actividad. Intenta nuevamente.',
+    },
+  });
 
   return (
     <div className='flex flex-wrap gap-2'>
@@ -94,7 +43,7 @@ const ActivityTypeActionButtons = () => {
       <Button
         size='sm'
         className='gap-1.5 bg-[#fbba0e] text-black font-semibold hover:bg-[#fbba0e]/90 transition'
-        onClick={() => setCreateOpen(true)}
+        onClick={() => create.setOpen(true)}
       >
         <Plus className='h-4 w-4' />
         Nuevo
@@ -103,21 +52,21 @@ const ActivityTypeActionButtons = () => {
       {/* ── Modal Crear ── */}
       <ModalForm
         mode='create'
-        open={createOpen}
-        onOpenChange={handleCreateOpenChange}
+        open={create.open}
+        onOpenChange={create.handleOpenChange}
         fields={fields}
-        form={createForm}
-        errors={createErrors}
-        onChange={handleCreateChange}
-        onSubmit={handleCreateSubmit}
-        loading={createLoading}
+        form={create.form}
+        errors={create.errors}
+        onChange={create.handleChange}
+        onSubmit={create.handleSubmit}
+        loading={create.loading}
         title='Nueva Actividad'
         description='Completa los campos.'
         icon={<Zap className='h-4 w-4 text-black' />}
-        onValueChange={handleCreateSelectChange}
+        onValueChange={create.handleValueChange}
       />
     </div>
   );
 };
 
-export default ActivityTypeActionButtons;
+export default ActivityActionButtons;

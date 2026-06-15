@@ -24,3 +24,14 @@ export const emptyForm: PartnerUniversityForm = {
   region: '',
   place: '',
 };
+
+export const formToPayload = (
+  form: PartnerUniversityForm,
+): PartnerUniversityPayload => ({
+  quota_type: Number(form.quota_type),
+  name: form.name,
+  abbreviation: form.abbreviation,
+  country: form.country,
+  region: form.region,
+  place: form.place,
+});

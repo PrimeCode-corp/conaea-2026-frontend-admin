@@ -1,5 +1,6 @@
 import { create } from 'zustand';
 import { quotaTypeService } from '@/services/quotaTypeService';
+import { createCrudActions } from './createCrudActions';
 import type { QuotaTypes } from '@/types/quotaTypes.types';
 
 type QuotaTypePayload = Omit<QuotaTypes, 'id' | 'is_active'>;
@@ -19,54 +20,27 @@ type QuotaTypeStore = {
   invalidateQuotaTypes: () => Promise<void>;
 };
 
-export const useQuotaTypeStore = create<QuotaTypeStore>((set, get) => ({
-  quotaTypes: [],
-  loading: false,
-  error: null,
+export const useQuotaTypeStore = create<QuotaTypeStore>((set, get) => {
+  const crud = createCrudActions<QuotaTypeStore, QuotaTypes, QuotaTypePayload>(
+    set,
+    get,
+    {
+      key: 'quotaTypes',
+      service: quotaTypeService,
+      loadError: 'Error al cargar los tipos de cuota',
+      createError: 'Error al crear el tipo de cuota',
+      updateError: 'Error al actualizar el tipo de cuota',
+    },
+  );
 
-  fetchQuotaTypes: async () => {
-    const { quotaTypes } = get();
-    if (quotaTypes.length > 0) return;
-    set({ loading: true, error: null });
-    try {
-      const quotaTypes = await quotaTypeService.getAll();
-      set({ quotaTypes });
-    } catch {
-      set({ error: 'Error al cargar los tipos de cuota' });
-    } finally {
-      set({ loading: false });
-    }
-  },
-
-  createQuotaType: async (payload) => {
-    try {
-      const newQuotaType = await quotaTypeService.create(payload);
-      set((state) => ({ quotaTypes: [...state.quotaTypes, newQuotaType] }));
-    } catch {
-      throw new Error('Error al crear el tipo de cuota');
-    }
-  },
-
-  updateQuotaType: async (id, payload) => {
-    try {
-      const updated = await quotaTypeService.update(id, payload);
-      set((state) => ({
-        quotaTypes: state.quotaTypes.map((q) => (q.id === id ? updated : q)),
-      }));
-    } catch {
-      throw new Error('Error al actualizar el tipo de cuota');
-    }
-  },
-
-  removeQuotaType: async (id) => {
-    await quotaTypeService.remove(id);
-    set((state) => ({
-      quotaTypes: state.quotaTypes.filter((q) => q.id !== id),
-    }));
-  },
-
-  invalidateQuotaTypes: async () => {
-    set({ quotaTypes: [] });
-    await get().fetchQuotaTypes();
-  },
-}));
+  return {
+    quotaTypes: [],
+    loading: false,
+    error: null,
+    fetchQuotaTypes: crud.fetch,
+    createQuotaType: crud.create,
+    updateQuotaType: crud.update,
+    removeQuotaType: crud.remove,
+    invalidateQuotaTypes: crud.invalidate,
+  };
+});

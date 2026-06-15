@@ -17,3 +17,12 @@ export const emptyForm: AvailableSlotForm = {
   mount: '',
   amount: '',
 };
+
+export const formToPayload = (
+  form: AvailableSlotForm,
+): AvailableSlotPayload => ({
+  pre_sale: Number(form.pre_sale),
+  quota_type: Number(form.quota_type),
+  mount: Number(form.mount),
+  amount: Number(form.amount),
+});
