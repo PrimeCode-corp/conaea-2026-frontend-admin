@@ -4,7 +4,10 @@ import { useEffect, useRef, useState } from 'react';
 import { toast } from 'sonner';
 import type { ParticipantTableItem } from '@/types/participants.types';
 import { useParticipantStore } from '@/store/useParticipantStore';
-import { watchEmailStatus } from '@/utils/watchEmailStatus';
+import {
+  watchEmailStatus,
+  type EmailStatusWatcher,
+} from '@/utils/watchEmailStatus';
 
 interface ParticipantTableButtonsProps {
   row: ParticipantTableItem;
@@ -31,9 +34,9 @@ const ParticipantTableButtons = ({
   const [validating, setValidating] = useState(false);
   const [watchingEmail, setWatchingEmail] = useState(false);
   const [localEmailStatus, setLocalEmailStatus] = useState<string | null>(null);
-  const esRef = useRef<EventSource | null>(null);
+  const watcherRef = useRef<EmailStatusWatcher | null>(null);
 
-  useEffect(() => () => { esRef.current?.close(); }, []);
+  useEffect(() => () => watcherRef.current?.cancel(), []);
 
   const isGeneral = row.quota_type === 'General';
 
@@ -58,15 +61,23 @@ const ParticipantTableButtons = ({
           : 'Participante validado correctamente.',
       );
       if (!wasValidated) {
-        esRef.current?.close();
+        watcherRef.current?.cancel();
         setWatchingEmail(true);
         setLocalEmailStatus(null);
-        esRef.current = watchEmailStatus(row.id, (status, error) => {
+        watcherRef.current = watchEmailStatus(row.id, (status, error) => {
           setWatchingEmail(false);
-          setLocalEmailStatus(status === 'sent' ? 'sent' : 'error');
           if (status === 'sent') {
+            setLocalEmailStatus('sent');
             toast.success('Email de bienvenida enviado.');
+          } else if (status === 'timeout') {
+            // Sin resultado aún: dejamos el estado del backend, no lo marcamos
+            // como error.
+            toast.info(
+              error ??
+                'El correo sigue enviándose. Actualiza en unos segundos para ver el estado.',
+            );
           } else {
+            setLocalEmailStatus('error');
             toast.error(`Email no entregado: ${error ?? status}`);
           }
         });
