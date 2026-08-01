@@ -21,6 +21,7 @@ import {
   watchEmailStatus,
   type EmailStatusWatcher,
 } from '@/utils/watchEmailStatus';
+import { useParticipantStore } from '@/store/useParticipantStore';
 import { toast } from 'sonner';
 
 interface Props {
@@ -124,7 +125,9 @@ const ModalEmailLogs = ({ open, onClose, participant }: Props) => {
   const [loading, setLoading] = useState(false);
   const [statusFilter, setStatusFilter] = useState<StatusFilter>('');
   const [resending, setResending] = useState(false);
+  const { setEmailStatus, setEmailWatching } = useParticipantStore();
   const watcherRef = useRef<EmailStatusWatcher | null>(null);
+  const watchedIdRef = useRef<number | null>(null);
 
   useEffect(() => {
     if (!open || !participant) return;
@@ -152,11 +155,20 @@ const ModalEmailLogs = ({ open, onClose, participant }: Props) => {
       .finally(() => setLoading(false));
   }, [open, participant, statusFilter]);
 
-  useEffect(() => () => watcherRef.current?.cancel(), []);
+  useEffect(
+    () => () => {
+      watcherRef.current?.cancel();
+      if (watchedIdRef.current !== null) {
+        setEmailWatching(watchedIdRef.current, false);
+      }
+    },
+    [setEmailWatching],
+  );
 
   const handleClose = () => {
-    watcherRef.current?.cancel();
-    watcherRef.current = null;
+    // No cancelamos el watcher: si hay un reenvío en curso debe seguir
+    // observándose con el modal cerrado, para que el icono de la tabla acabe
+    // reflejando el resultado. Se corta solo al desmontar o por su timeout.
     setStatusFilter('');
     setLogs([]);
     onClose();
@@ -196,10 +208,17 @@ const ModalEmailLogs = ({ open, onClose, participant }: Props) => {
 
       await emailLogService.resend(participant.id);
       watcherRef.current?.cancel();
+      setEmailWatching(participant.id, true);
+      watchedIdRef.current = participant.id;
       watcherRef.current = watchEmailStatus(
         participant.id,
         (status, error) => {
+          setEmailWatching(participant.id, false);
+          watchedIdRef.current = null;
           if (status === 'sent') {
+            // Refleja el resultado en el icono de la tabla, aunque el modal
+            // ya esté cerrado.
+            setEmailStatus(participant.id, 'sent');
             toast.success('Email reenviado correctamente.');
           } else if (status === 'timeout') {
             toast.info(
@@ -207,6 +226,7 @@ const ModalEmailLogs = ({ open, onClose, participant }: Props) => {
                 'El correo sigue enviándose. Actualiza en unos segundos para ver el estado.',
             );
           } else {
+            setEmailStatus(participant.id, 'error');
             toast.error(`Email no entregado: ${error ?? status}`);
           }
           refreshLogs(participant.id);

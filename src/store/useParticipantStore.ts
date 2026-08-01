@@ -18,6 +18,20 @@ type ParticipantStore = {
   loading: boolean;
   error: string | null;
   stats: { total: number; validated: number; pending: number } | null;
+  /** Ids de participantes cuyo correo se está observando (envío en curso). */
+  emailWatchingIds: number[];
+
+  /**
+   * Actualiza el estado del correo de un participante en la tabla. Lo usan
+   * tanto la validación (envío de bienvenida) como el reenvío desde el modal
+   * de historial, para que el icono del correo refleje el último resultado sin
+   * recargar la lista.
+   */
+  setEmailStatus: (
+    participantId: number,
+    status: ParticipantTableItem['email_status'],
+  ) => void;
+  setEmailWatching: (participantId: number, watching: boolean) => void;
 
   fetchParticipants: (
     page?: number,
@@ -50,6 +64,25 @@ export const useParticipantStore = create<ParticipantStore>((set, get) => ({
   loading: false,
   error: null,
   stats: null,
+  emailWatchingIds: [],
+
+  setEmailStatus: (participantId, status) => {
+    set((state) => ({
+      participants: state.participants.map((p) =>
+        p.id === participantId ? { ...p, email_status: status } : p,
+      ),
+    }));
+  },
+
+  setEmailWatching: (participantId, watching) => {
+    set((state) => ({
+      emailWatchingIds: watching
+        ? state.emailWatchingIds.includes(participantId)
+          ? state.emailWatchingIds
+          : [...state.emailWatchingIds, participantId]
+        : state.emailWatchingIds.filter((id) => id !== participantId),
+    }));
+  },
 
   fetchParticipants: async (page = 1, params?) => {
     set({ loading: true, error: null, lastParams: params ?? {}, page });

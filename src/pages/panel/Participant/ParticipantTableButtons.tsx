@@ -30,13 +30,26 @@ const ParticipantTableButtons = ({
   onEdit,
   onEmailLogs,
 }: ParticipantTableButtonsProps) => {
-  const { toggleRegistrationValidation } = useParticipantStore();
+  const { toggleRegistrationValidation, setEmailStatus, setEmailWatching } =
+    useParticipantStore();
+  const watchingEmail = useParticipantStore((s) =>
+    s.emailWatchingIds.includes(row.id),
+  );
   const [validating, setValidating] = useState(false);
-  const [watchingEmail, setWatchingEmail] = useState(false);
-  const [localEmailStatus, setLocalEmailStatus] = useState<string | null>(null);
   const watcherRef = useRef<EmailStatusWatcher | null>(null);
+  const watchedIdRef = useRef<number | null>(null);
 
-  useEffect(() => () => watcherRef.current?.cancel(), []);
+  useEffect(
+    () => () => {
+      watcherRef.current?.cancel();
+      // El watcher muere con el componente: liberamos la marca para no dejar
+      // el icono parpadeando (y deshabilitado) al volver a la tabla.
+      if (watchedIdRef.current !== null) {
+        setEmailWatching(watchedIdRef.current, false);
+      }
+    },
+    [setEmailWatching],
+  );
 
   const isGeneral = row.quota_type === 'General';
 
@@ -62,12 +75,13 @@ const ParticipantTableButtons = ({
       );
       if (!wasValidated) {
         watcherRef.current?.cancel();
-        setWatchingEmail(true);
-        setLocalEmailStatus(null);
+        setEmailWatching(row.id, true);
+        watchedIdRef.current = row.id;
         watcherRef.current = watchEmailStatus(row.id, (status, error) => {
-          setWatchingEmail(false);
+          setEmailWatching(row.id, false);
+          watchedIdRef.current = null;
           if (status === 'sent') {
-            setLocalEmailStatus('sent');
+            setEmailStatus(row.id, 'sent');
             toast.success('Email de bienvenida enviado.');
           } else if (status === 'timeout') {
             // Sin resultado aún: dejamos el estado del backend, no lo marcamos
@@ -77,7 +91,7 @@ const ParticipantTableButtons = ({
                 'El correo sigue enviándose. Actualiza en unos segundos para ver el estado.',
             );
           } else {
-            setLocalEmailStatus('error');
+            setEmailStatus(row.id, 'error');
             toast.error(`Email no entregado: ${error ?? status}`);
           }
         });
@@ -145,7 +159,7 @@ const ParticipantTableButtons = ({
           'h-8 w-8 p-0 transition disabled:cursor-not-allowed',
           watchingEmail
             ? 'text-slate-600 animate-blink'
-            : emailStatusClass[localEmailStatus ?? row.email_status ?? 'nobody'],
+            : emailStatusClass[row.email_status ?? 'nobody'],
         ].join(' ')}
         onClick={() => onEmailLogs?.(row)}
       >
