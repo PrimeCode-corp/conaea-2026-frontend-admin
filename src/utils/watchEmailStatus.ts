@@ -1,64 +1,102 @@
+import { emailLogService } from '@/services/emailLogService';
+
+export interface EmailStatusWatcher {
+  /** Detiene el sondeo. Seguro de llamar varias veces. */
+  cancel: () => void;
+}
+
+interface WatchOptions {
+  /** Tiempo máximo total antes de rendirse. Por defecto 2 min. */
+  timeoutMs?: number;
+  /** Intervalo entre sondeos. Por defecto 3 s. */
+  intervalMs?: number;
+  /**
+   * Id del último log ANTES de reenviar. Permite distinguir el resultado
+   * del reenvío actual de un estado final previo (evita falsos positivos).
+   */
+  baselineLogId?: number | null;
+}
+
+const TERMINAL = new Set(['sent', 'failed']);
+
+/**
+ * Observa el estado de entrega del correo de un participante sondeando la API
+ * (vía axios, con el token de autenticación). Reemplaza al EventSource nativo,
+ * que no puede enviar el header Authorization y fallaba en producción
+ * (cross-origin + auth) lanzando un error inmediato aunque el correo se enviara
+ * bien. Ver contexto en el historial de emails del panel de participantes.
+ *
+ * Resuelve cuando el correo llega a un estado final (`sent` / `failed`) que
+ * corresponde al reenvío actual, o con `timeout` si se agota el tiempo.
+ */
 export function watchEmailStatus(
   participantId: number,
   onResult: (status: string, error: string | null) => void,
-  options?: { timeoutMs?: number },
-): EventSource {
-  // El correo puede tardar en enviarse; damos un margen amplio antes de rendirnos.
+  options?: WatchOptions,
+): EmailStatusWatcher {
   const timeoutMs = options?.timeoutMs ?? 120_000;
+  const intervalMs = options?.intervalMs ?? 3_000;
+  const baselineLogId = options?.baselineLogId ?? null;
 
-  const es = new EventSource(
-    `${import.meta.env.VITE_API_URL}/security/email-status/sse/?participant_id=${participantId}`,
-  );
+  const deadline = Date.now() + timeoutMs;
+  let cancelled = false;
+  let sawNonTerminal = false;
+  let timer: ReturnType<typeof setTimeout> | undefined;
 
-  let settled = false;
+  const stop = () => {
+    cancelled = true;
+    if (timer) clearTimeout(timer);
+  };
 
-  const finish = (status: string, error: string | null) => {
-    if (settled) return;
-    settled = true;
-    clearTimeout(timer);
-    es.close();
+  const settle = (status: string, error: string | null) => {
+    if (cancelled) return;
+    stop();
     onResult(status, error);
   };
 
-  const timer = setTimeout(() => {
-    finish(
-      'timeout',
-      'El correo sigue enviándose. Actualiza en unos segundos para ver el estado.',
-    );
-  }, timeoutMs);
+  const poll = async () => {
+    if (cancelled) return;
 
-  // Si el consumidor cierra el stream manualmente, evitamos que el timeout
-  // dispare onResult sobre un componente ya desmontado.
-  const nativeClose = es.close.bind(es);
-  es.close = () => {
-    settled = true;
-    clearTimeout(timer);
-    nativeClose();
-  };
-
-  es.onmessage = ({ data }: MessageEvent) => {
-    let payload: { status: string; error: string | null };
     try {
-      payload = JSON.parse(data);
+      const data = await emailLogService.getByParticipant(participantId, {
+        page_size: 1,
+      });
+      const latest = data.results[0];
+
+      if (latest) {
+        const isTerminal = TERMINAL.has(latest.status);
+        // Aceptamos el estado final solo si corresponde al reenvío actual:
+        // un log nuevo (id distinto al baseline) o un estado que ya pasó por
+        // un intermedio (pending) durante esta observación. Así evitamos leer
+        // el estado final viejo antes de que el backend registre el reenvío.
+        const isCurrentAttempt =
+          latest.id !== baselineLogId || sawNonTerminal;
+
+        if (isTerminal && isCurrentAttempt) {
+          settle(latest.status, latest.error_message);
+          return;
+        }
+
+        if (!isTerminal) sawNonTerminal = true;
+      }
     } catch {
-      // Frames de keep-alive u otros mensajes no-JSON: los ignoramos.
+      // Errores transitorios de red: seguimos intentando hasta el timeout.
+    }
+
+    if (cancelled) return;
+
+    if (Date.now() >= deadline) {
+      settle(
+        'timeout',
+        'El correo sigue enviándose. Actualiza en unos segundos para ver el estado.',
+      );
       return;
     }
-    // "pending" es un estado intermedio: seguimos esperando el resultado final.
-    if (payload.status === 'pending') return;
-    finish(payload.status, payload.error);
+
+    timer = setTimeout(poll, intervalMs);
   };
 
-  es.onerror = () => {
-    // onerror NO implica que el correo falló. EventSource lo dispara también
-    // durante reconexiones automáticas (readyState === CONNECTING) mientras el
-    // envío está en curso. Solo lo tratamos como fallo si el navegador cerró la
-    // conexión de forma definitiva; en cualquier otro caso dejamos que reintente
-    // hasta que llegue el estado real o venza el timeout.
-    if (es.readyState === EventSource.CLOSED) {
-      finish('failed', 'Error de conexión con el servidor');
-    }
-  };
+  poll();
 
-  return es;
+  return { cancel: stop };
 }

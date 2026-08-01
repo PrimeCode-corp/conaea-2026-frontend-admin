@@ -17,7 +17,10 @@ import {
 import type { ParticipantTableItem } from '@/types/participants.types';
 import type { EmailLog } from '@/types/email-log.types';
 import { emailLogService } from '@/services/emailLogService';
-import { watchEmailStatus } from '@/utils/watchEmailStatus';
+import {
+  watchEmailStatus,
+  type EmailStatusWatcher,
+} from '@/utils/watchEmailStatus';
 import { toast } from 'sonner';
 
 interface Props {
@@ -121,7 +124,7 @@ const ModalEmailLogs = ({ open, onClose, participant }: Props) => {
   const [loading, setLoading] = useState(false);
   const [statusFilter, setStatusFilter] = useState<StatusFilter>('');
   const [resending, setResending] = useState(false);
-  const esRef = useRef<EventSource | null>(null);
+  const watcherRef = useRef<EmailStatusWatcher | null>(null);
 
   useEffect(() => {
     if (!open || !participant) return;
@@ -149,9 +152,11 @@ const ModalEmailLogs = ({ open, onClose, participant }: Props) => {
       .finally(() => setLoading(false));
   }, [open, participant, statusFilter]);
 
+  useEffect(() => () => watcherRef.current?.cancel(), []);
+
   const handleClose = () => {
-    esRef.current?.close();
-    esRef.current = null;
+    watcherRef.current?.cancel();
+    watcherRef.current = null;
     setStatusFilter('');
     setLogs([]);
     onClose();
@@ -177,22 +182,38 @@ const ModalEmailLogs = ({ open, onClose, participant }: Props) => {
     if (!participant) return;
     setResending(true);
     try {
+      // Baseline: id del último log antes de reenviar, para que el watcher
+      // distinga el resultado del reenvío de un estado final previo.
+      let baselineLogId: number | null = null;
+      try {
+        const before = await emailLogService.getByParticipant(participant.id, {
+          page_size: 1,
+        });
+        baselineLogId = before.results[0]?.id ?? null;
+      } catch {
+        // Sin baseline: el watcher se apoyará en el estado intermedio/timeout.
+      }
+
       await emailLogService.resend(participant.id);
-      esRef.current?.close();
-      esRef.current = watchEmailStatus(participant.id, (status, error) => {
-        if (status === 'sent') {
-          toast.success('Email reenviado correctamente.');
-        } else if (status === 'timeout') {
-          toast.info(
-            error ??
-              'El correo sigue enviándose. Actualiza en unos segundos para ver el estado.',
-          );
-        } else {
-          toast.error(`Email no entregado: ${error ?? status}`);
-        }
-        refreshLogs(participant.id);
-        setResending(false);
-      });
+      watcherRef.current?.cancel();
+      watcherRef.current = watchEmailStatus(
+        participant.id,
+        (status, error) => {
+          if (status === 'sent') {
+            toast.success('Email reenviado correctamente.');
+          } else if (status === 'timeout') {
+            toast.info(
+              error ??
+                'El correo sigue enviándose. Actualiza en unos segundos para ver el estado.',
+            );
+          } else {
+            toast.error(`Email no entregado: ${error ?? status}`);
+          }
+          refreshLogs(participant.id);
+          setResending(false);
+        },
+        { baselineLogId },
+      );
     } catch {
       toast.error('Error al reenviar el email. Intenta nuevamente.');
       setResending(false);
