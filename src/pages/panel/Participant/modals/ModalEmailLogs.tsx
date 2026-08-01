@@ -182,14 +182,19 @@ const ModalEmailLogs = ({ open, onClose, participant }: Props) => {
       esRef.current = watchEmailStatus(participant.id, (status, error) => {
         if (status === 'sent') {
           toast.success('Email reenviado correctamente.');
+        } else if (status === 'timeout') {
+          toast.info(
+            error ??
+              'El correo sigue enviándose. Actualiza en unos segundos para ver el estado.',
+          );
         } else {
           toast.error(`Email no entregado: ${error ?? status}`);
         }
         refreshLogs(participant.id);
+        setResending(false);
       });
     } catch {
       toast.error('Error al reenviar el email. Intenta nuevamente.');
-    } finally {
       setResending(false);
     }
   };
