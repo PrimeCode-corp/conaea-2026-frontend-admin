@@ -9,7 +9,7 @@ import type {
   ParticipantExportDownload,
 } from '@/types/participants.types';
 
-const EXCEL_URL = `${import.meta.env.VITE_API_URL}/participants/export/excel/`;
+const EXCEL_URL = `${import.meta.env.VITE_API_URL}participants/export/excel/`;
 
 const withFilters = (url: string, filters: ParticipantExportFilters) => {
   const params = new URLSearchParams();
@@ -85,9 +85,13 @@ export const participantService = {
 
   update: (id: number, formData: FormData) =>
     api
-      .patch<ParticipantTableItem>(`/participants/participant/${id}/update/`, formData, {
-        headers: { 'Content-Type': 'multipart/form-data' },
-      })
+      .patch<ParticipantTableItem>(
+        `/participants/participant/${id}/update/`,
+        formData,
+        {
+          headers: { 'Content-Type': 'multipart/form-data' },
+        },
+      )
       .then((res) => res.data),
 
   remove: (id: number) =>
