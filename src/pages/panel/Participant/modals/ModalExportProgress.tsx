@@ -13,8 +13,11 @@ import { formatBytes } from '@/utils/fileDownload';
 /** Etapa del lado del cliente, no la `phase` que manda el backend. */
 export type ExportStage = 'starting' | 'processing' | 'downloading';
 
+export type ExportFormat = 'zip' | 'xlsx';
+
 export interface ExportProgressState {
   stage: ExportStage;
+  format: ExportFormat;
   /** Avance real de 0 a 100. */
   percent: number;
   /** Milisegundos restantes estimados con el ritmo medido, o `null`. */
@@ -60,23 +63,35 @@ const ModalExportProgress = ({
   cancelling,
   onCancel,
 }: ModalExportProgressProps) => {
-  const { stage, percent, etaMs, processed, total, phaseLabel, written, size } =
-    progress;
+  const {
+    stage,
+    format,
+    percent,
+    etaMs,
+    processed,
+    total,
+    phaseLabel,
+    written,
+    size,
+  } = progress;
 
-  // Mientras no haya un solo expediente armado no hay nada que medir: una
-  // barra clavada en 0% no distingue "arrancando" de "colgado", así que ahí
-  // mostramos la animación indeterminada.
+  // El Excel es síncrono: no hay avance que reportar hasta que llega el
+  // archivo. Mientras tanto, y mientras el .zip no tenga un solo expediente
+  // armado, una barra clavada en 0% no distingue "arrancando" de "colgado", así
+  // que ahí mostramos la animación indeterminada.
   const indeterminate =
     stage === 'starting' || (stage === 'processing' && processed === 0);
   const rounded = Math.min(100, Math.round(percent));
 
   const description =
-    stage === 'starting'
-      ? 'Iniciando la exportación...'
-      : stage === 'processing'
-        ? (phaseLabel ??
-          'El servidor está armando el .zip con las fotos, los QR y los documentos.')
-        : 'Descargando el archivo. No cierres esta ventana hasta que termine.';
+    stage === 'downloading'
+      ? 'Descargando el archivo. No cierres esta ventana hasta que termine.'
+      : format === 'xlsx'
+        ? 'Generando la hoja de cálculo con los datos y los enlaces...'
+        : stage === 'starting'
+          ? 'Iniciando la exportación...'
+          : (phaseLabel ??
+            'El servidor está armando el .zip con las fotos, los QR y los documentos.');
 
   const detail =
     stage === 'downloading'
@@ -85,7 +100,9 @@ const ModalExportProgress = ({
         : `${formatBytes(written)} descargados`
       : total
         ? `${processed} de ${total} expedientes`
-        : 'Preparando...';
+        : format === 'xlsx'
+          ? 'Sin archivos que descargar: solo datos y enlaces'
+          : 'Preparando...';
 
   return (
     <Dialog open={open}>
@@ -131,9 +148,11 @@ const ModalExportProgress = ({
               ].join(' ')}
             >
               {indeterminate
-                ? stage === 'starting'
-                  ? 'Iniciando...'
-                  : 'Preparando...'
+                ? format === 'xlsx'
+                  ? 'Generando...'
+                  : stage === 'starting'
+                    ? 'Iniciando...'
+                    : 'Preparando...'
                 : `${rounded}%`}
             </span>
           </div>

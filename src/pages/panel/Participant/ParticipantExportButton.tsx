@@ -1,23 +1,34 @@
 import { useEffect, useRef, useState } from 'react';
-import { Download, Loader2 } from 'lucide-react';
+import { ChevronDown, Download, FileSpreadsheet, Loader2, Package } from 'lucide-react';
 import { toast } from 'sonner';
 
 import { Button } from '@/components/ui/button';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
 import { participantService } from '@/services/participantService';
 import { useParticipantStore } from '@/store/useParticipantStore';
 import { extractApiError } from '@/utils/apiError';
 import {
   downloadBlob,
-  pickZipDestination,
+  pickSaveDestination,
   streamToBlob,
   streamToFile,
   supportsSavePicker,
+  XLSX_FILE_TYPE,
+  ZIP_FILE_TYPE,
   type SaveFileHandle,
+  type SaveFileType,
 } from '@/utils/fileDownload';
 import ModalExportProgress, {
+  type ExportFormat,
   type ExportProgressState,
 } from './modals/ModalExportProgress';
 import type {
+  ParticipantExportDownload,
   ParticipantExportStatus,
   ParticipantExportTask,
 } from '@/types/participants.types';
@@ -29,9 +40,9 @@ interface ParticipantExportButtonProps {
 }
 
 /**
- * Reparto de la barra entre las dos fases. Armar el `.zip` en el servidor es
- * lo lento (bajar de Cloudinary, generar QR, comprimir); la bajada del archivo
- * ya hecho es comparativamente corta.
+ * Reparto de la barra entre las dos fases del `.zip`. Armarlo en el servidor
+ * es lo lento (bajar de Cloudinary, generar QR, comprimir); la bajada del
+ * archivo ya hecho es comparativamente corta.
  */
 const PROCESS_WEIGHT = 0.9;
 
@@ -47,6 +58,11 @@ const DEFAULT_RETRY_SECONDS = 2;
  * `processed` se mueva, en vez de dejar el modal girando para siempre.
  */
 const STALL_MS = 120_000;
+
+const FILE_TYPES: Record<ExportFormat, SaveFileType> = {
+  zip: ZIP_FILE_TYPE,
+  xlsx: XLSX_FILE_TYPE,
+};
 
 /**
  * Avance 0-100 de una tarea. Preferimos el `progress` del backend, pero si no
@@ -95,22 +111,24 @@ const slugify = (value: string) =>
 
 /**
  * Nombre propuesto en el diálogo "Guardar como". Lo armamos en el cliente
- * aunque la tarea traiga `filename`, porque el diálogo se abre al hacer click
+ * aunque la respuesta traiga el suyo, porque el diálogo se abre al hacer click
  * —el navegador solo lo permite con una interacción reciente— y para entonces
  * la exportación ni siquiera arrancó.
  */
-const suggestFilename = (preSaleName?: string) => {
+const suggestFilename = (format: ExportFormat, preSaleName?: string) => {
   const now = new Date();
   const pad = (n: number) => String(n).padStart(2, '0');
   const stamp =
     `${now.getFullYear()}${pad(now.getMonth() + 1)}${pad(now.getDate())}` +
     `-${pad(now.getHours())}${pad(now.getMinutes())}`;
+  const scope = preSaleName ? slugify(preSaleName) : 'todas';
 
-  return `participantes_${preSaleName ? slugify(preSaleName) : 'todas'}_${stamp}.zip`;
+  return `participantes_${scope}_${stamp}${FILE_TYPES[format].extension}`;
 };
 
-const IDLE_PROGRESS: ExportProgressState = {
+const idleProgress = (format: ExportFormat): ExportProgressState => ({
   stage: 'starting',
+  format,
   percent: 0,
   etaMs: null,
   processed: 0,
@@ -118,7 +136,7 @@ const IDLE_PROGRESS: ExportProgressState = {
   phaseLabel: null,
   written: 0,
   size: null,
-};
+});
 
 const ParticipantExportButton = ({
   preSaleId,
@@ -129,7 +147,9 @@ const ParticipantExportButton = ({
 
   const [exporting, setExporting] = useState(false);
   const [cancelling, setCancelling] = useState(false);
-  const [progress, setProgress] = useState<ExportProgressState>(IDLE_PROGRESS);
+  const [progress, setProgress] = useState<ExportProgressState>(
+    idleProgress('zip'),
+  );
   const abortRef = useRef<AbortController | null>(null);
   const taskIdRef = useRef<string | null>(null);
   const userCancelledRef = useRef(false);
@@ -163,7 +183,7 @@ const ParticipantExportButton = ({
     abortRef.current?.abort();
   };
 
-  const handleExport = async () => {
+  const handleExport = async (format: ExportFormat) => {
     if (exporting) return;
 
     const preSaleName = preSales.find((p) => p.id === preSaleId)?.name;
@@ -173,7 +193,10 @@ const ParticipantExportButton = ({
     // lo permite mientras el click siga siendo reciente.
     if (supportsSavePicker()) {
       try {
-        handle = await pickZipDestination(suggestFilename(preSaleName));
+        handle = await pickSaveDestination(
+          suggestFilename(format, preSaleName),
+          FILE_TYPES[format],
+        );
       } catch {
         toast.error('No se pudo abrir el diálogo para guardar el archivo.');
         return;
@@ -181,25 +204,105 @@ const ParticipantExportButton = ({
       if (!handle) return; // el usuario canceló
     }
 
+    const filters = {
+      pre_sale_id: preSaleId,
+      quota_type_id: quotaTypeId,
+      university_code: universityCode || undefined,
+    };
+
     const controller = new AbortController();
     abortRef.current = controller;
     userCancelledRef.current = false;
     taskIdRef.current = null;
     setCancelling(false);
     setExporting(true);
-    setProgress(IDLE_PROGRESS);
+    setProgress(idleProgress(format));
 
     const discardFile = () => handle?.remove?.().catch(() => {});
 
+    /** Vuelca la respuesta a disco (o a Descargas) mostrando el avance. */
+    const saveDownload = async (download: ParticipantExportDownload) => {
+      const startedAt = Date.now();
+      const size = download.size;
+      const base = format === 'zip' ? PROCESS_WEIGHT : 0;
+
+      setProgress((prev) => ({
+        ...prev,
+        stage: 'downloading',
+        percent: base * 100,
+        written: 0,
+        size,
+        etaMs: null,
+      }));
+
+      // El stream entrega miles de chunks; refrescamos como mucho cada 150 ms
+      // para no re-renderizar en cada uno.
+      let lastTick = 0;
+      const reportProgress = (bytes: number) => {
+        const now = Date.now();
+        if (now - lastTick < 150) return;
+        lastTick = now;
+
+        const elapsed = now - startedAt;
+        const bytesPerMs = elapsed > 0 ? bytes / elapsed : 0;
+
+        setProgress((prev) => ({
+          ...prev,
+          written: bytes,
+          percent: size
+            ? (base + (bytes / size) * (1 - base)) * 100
+            : prev.percent,
+          etaMs: size && bytesPerMs > 0 ? (size - bytes) / bytesPerMs : null,
+        }));
+      };
+
+      if (handle) {
+        await streamToFile(download.body, handle, reportProgress);
+      } else {
+        // Firefox/Safari: sin diálogo de destino, el archivo va a la carpeta de
+        // descargas y pasa completo por memoria.
+        const blob = await streamToBlob(
+          download.body,
+          FILE_TYPES[format].mime,
+          reportProgress,
+        );
+        downloadBlob(blob, download.filename);
+      }
+
+      // El progreso viene throttleado: cerramos la barra en 100% en vez de
+      // dejarla clavada en el último tick.
+      setProgress((prev) => ({
+        ...prev,
+        percent: 100,
+        written: size ?? prev.written,
+        etaMs: 0,
+      }));
+    };
+
     try {
+      // ── Excel: síncrono, un solo request ──────────────────────────────
+      if (format === 'xlsx') {
+        const download = await participantService.exportExcel(
+          filters,
+          controller.signal,
+        );
+
+        if (!download) {
+          toast.info('No hay participantes con esos filtros.');
+          await discardFile();
+          return;
+        }
+
+        await saveDownload(download);
+        toast.success('Excel descargado correctamente.');
+        return;
+      }
+
+      // ── ZIP: tarea en el servidor con avance real ─────────────────────
       // 1. Arrancar el trabajo. Responde al instante con la tarea a sondear.
       let task: ParticipantExportTask | null;
       try {
-        task = await participantService.startExport({
-          pre_sale_id: preSaleId,
-          quota_type_id: quotaTypeId,
-          university_code: universityCode || undefined,
-        });
+        task = await participantService.startExport(filters);
       } catch (err) {
         // El backend ya manda el mensaje listo para mostrar: el tope de 1000
         // participantes o el límite de exportaciones simultáneas (429).
@@ -279,61 +382,15 @@ const ParticipantExportButton = ({
       }
 
       // 3. Descargar el `.zip`. Acá el avance son bytes recibidos.
-      const downloadStartedAt = Date.now();
-      setProgress((prev) => ({
-        ...prev,
-        stage: 'downloading',
-        percent: PROCESS_WEIGHT * 100,
-        written: 0,
-        size: task?.file_size ?? null,
-        etaMs: null,
-      }));
-
       const download = await participantService.downloadExport(
         task.download_url,
         controller.signal,
       );
-      const size = download.size ?? task.file_size;
-
-      // El stream entrega miles de chunks; refrescamos como mucho cada 150 ms
-      // para no re-renderizar en cada uno.
-      let lastTick = 0;
-      const reportProgress = (bytes: number) => {
-        const now = Date.now();
-        if (now - lastTick < 150) return;
-        lastTick = now;
-
-        const elapsed = now - downloadStartedAt;
-        const bytesPerMs = elapsed > 0 ? bytes / elapsed : 0;
-
-        setProgress((prev) => ({
-          ...prev,
-          written: bytes,
-          size,
-          percent: size
-            ? (PROCESS_WEIGHT + (bytes / size) * (1 - PROCESS_WEIGHT)) * 100
-            : prev.percent,
-          etaMs: size && bytesPerMs > 0 ? (size - bytes) / bytesPerMs : null,
-        }));
-      };
-
-      if (handle) {
-        await streamToFile(download.body, handle, reportProgress);
-      } else {
-        // Firefox/Safari: sin diálogo de destino, el archivo va a la carpeta de
-        // descargas y pasa completo por memoria.
-        const blob = await streamToBlob(download.body, reportProgress);
-        downloadBlob(blob, task.filename ?? 'participantes.zip');
-      }
-
-      // El progreso viene throttleado: cerramos la barra en 100% en vez de
-      // dejarla clavada en el último tick.
-      setProgress((prev) => ({
-        ...prev,
-        percent: 100,
-        written: size ?? prev.written,
-        etaMs: 0,
-      }));
+      await saveDownload({
+        ...download,
+        size: download.size ?? task.file_size,
+        filename: task.filename ?? download.filename,
+      });
 
       toast.success('Exportación descargada correctamente.');
     } catch (err) {
@@ -356,34 +413,64 @@ const ParticipantExportButton = ({
       taskIdRef.current = null;
       setCancelling(false);
       setExporting(false);
-      setProgress(IDLE_PROGRESS);
+      setProgress(idleProgress(format));
     }
   };
 
   return (
     <>
-      <div className='relative group'>
-        <Button
-          onClick={handleExport}
-          disabled={exporting}
-          className='h-9 gap-1.5 bg-[#fbba0e] text-black text-sm font-semibold hover:bg-[#fbba0e]/90 disabled:opacity-60 disabled:cursor-not-allowed cursor-pointer'
-        >
-          {exporting ? (
-            <Loader2 className='h-3.5 w-3.5 animate-spin' />
-          ) : (
-            <Download className='h-3.5 w-3.5' />
-          )}
-          {exporting ? 'Exportando...' : 'Exportar'}
-        </Button>
+      <DropdownMenu>
+        <DropdownMenuTrigger asChild>
+          <Button
+            disabled={exporting}
+            className='h-9 gap-1.5 bg-[#fbba0e] text-black text-sm font-semibold hover:bg-[#fbba0e]/90 disabled:opacity-60 disabled:cursor-not-allowed cursor-pointer'
+          >
+            {exporting ? (
+              <Loader2 className='h-3.5 w-3.5 animate-spin' />
+            ) : (
+              <Download className='h-3.5 w-3.5' />
+            )}
+            {exporting ? 'Exportando...' : 'Exportar'}
+            {!exporting && <ChevronDown className='h-3.5 w-3.5' />}
+          </Button>
+        </DropdownMenuTrigger>
 
-        {!exporting && (
-          <div className='absolute top-full right-0 mt-1.5 w-64 px-2 py-1.5 rounded-md text-xs whitespace-normal pointer-events-none opacity-0 group-hover:opacity-100 transition-opacity bg-[#111] border border-white/10 text-slate-300 z-20'>
-            Descarga un .zip con el expediente de los participantes activos
-            (foto, QR, ficha, vouchers y datos). Usa los filtros de preventa,
-            cupo y universidad; ignora la búsqueda y el tipo de documento.
-          </div>
-        )}
-      </div>
+        <DropdownMenuContent
+          align='end'
+          className='w-72 bg-[#111] text-slate-200 border border-white/10'
+        >
+          <DropdownMenuItem
+            className='cursor-pointer flex-col items-start gap-0.5 focus:bg-white/5 focus:text-slate-100'
+            onClick={() => handleExport('zip')}
+          >
+            <span className='flex items-center gap-2 font-semibold'>
+              <Package className='h-3.5 w-3.5 text-[#fbba0e]' />
+              Expedientes (.zip)
+            </span>
+            <span className='pl-[22px] text-xs text-slate-400'>
+              Una carpeta por participante con foto, QR, ficha y vouchers.
+            </span>
+          </DropdownMenuItem>
+
+          <DropdownMenuItem
+            className='cursor-pointer flex-col items-start gap-0.5 focus:bg-white/5 focus:text-slate-100'
+            onClick={() => handleExport('xlsx')}
+          >
+            <span className='flex items-center gap-2 font-semibold'>
+              <FileSpreadsheet className='h-3.5 w-3.5 text-[#fbba0e]' />
+              Tabla de datos (.xlsx)
+            </span>
+            <span className='pl-[22px] text-xs text-slate-400'>
+              Datos y estado de cada participante, con enlaces a sus archivos.
+            </span>
+          </DropdownMenuItem>
+
+          <p className='px-2 py-1.5 text-[11px] leading-snug text-slate-500'>
+            Ambos usan los filtros de preventa, cupo y universidad; ignoran la
+            búsqueda y el tipo de documento.
+          </p>
+        </DropdownMenuContent>
+      </DropdownMenu>
 
       <ModalExportProgress
         open={exporting}

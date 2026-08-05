@@ -9,8 +9,39 @@ import type {
   ParticipantExportDownload,
 } from '@/types/participants.types';
 
+const EXCEL_URL = `${import.meta.env.VITE_API_URL}/participants/export/excel/`;
+
+const withFilters = (url: string, filters: ParticipantExportFilters) => {
+  const params = new URLSearchParams();
+  for (const [key, value] of Object.entries(filters)) {
+    if (value !== undefined && value !== null && value !== '') {
+      params.set(key, String(value));
+    }
+  }
+  const query = params.toString();
+  return query ? `${url}?${query}` : url;
+};
+
+/** Lee el nombre del archivo de la cabecera `Content-Disposition`. */
+const parseFilename = (disposition: string | null, fallback: string) => {
+  if (!disposition) return fallback;
+  const encoded = /filename\*=UTF-8''([^;]+)/i.exec(disposition)?.[1];
+  if (encoded) return decodeURIComponent(encoded);
+  return /filename="?([^";]+)"?/i.exec(disposition)?.[1] ?? fallback;
+};
+
+/** El `detail` del backend, leído del cuerpo JSON de una respuesta de error. */
+const readErrorDetail = async (res: Response, fallback: string) => {
+  try {
+    const data = (await res.json()) as { detail?: string };
+    return data?.detail ?? fallback;
+  } catch {
+    return fallback;
+  }
+};
+
 /**
- * Descarga autenticada con `fetch`. La usamos solo para el `.zip`: necesitamos
+ * Descarga autenticada con `fetch`. La usamos para los archivos: necesitamos
  * el `ReadableStream` de la respuesta para escribirlo directo a disco, cosa que
  * axios con `responseType: 'blob'` no permite (dejaría el archivo entero en
  * memoria). El precio es reintentar el `401` a mano, porque no pasa por el
@@ -133,6 +164,47 @@ export const participantService = {
 
     const length = res.headers.get('content-length');
 
-    return { body: res.body, size: length ? Number(length) : null };
+    return {
+      body: res.body,
+      size: length ? Number(length) : null,
+      filename: parseFilename(
+        res.headers.get('content-disposition'),
+        'participantes.zip',
+      ),
+    };
+  },
+
+  /**
+   * Exporta la tabla de participantes a `.xlsx`: los mismos datos que el `.zip`
+   * escribe en `datos.txt` y `estado.txt`, más los enlaces a foto, ficha y
+   * vouchers. No descarga archivos ni genera QR, así que es síncrono y tarda
+   * segundos; por eso no necesita el flujo de tarea del `.zip`.
+   *
+   * Devuelve `null` si el filtro no arroja participantes (`204`).
+   */
+  exportExcel: async (
+    filters: ParticipantExportFilters = {},
+    signal?: AbortSignal,
+  ): Promise<ParticipantExportDownload | null> => {
+    const res = await authorizedFetch(withFilters(EXCEL_URL, filters), signal);
+
+    if (res.status === 204) return null;
+
+    if (!res.ok || !res.body) {
+      throw new Error(
+        await readErrorDetail(res, 'No se pudo generar el Excel.'),
+      );
+    }
+
+    const length = res.headers.get('content-length');
+
+    return {
+      body: res.body,
+      size: length ? Number(length) : null,
+      filename: parseFilename(
+        res.headers.get('content-disposition'),
+        'participantes.xlsx',
+      ),
+    };
   },
 };

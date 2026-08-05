@@ -37,13 +37,32 @@ type SavePickerWindow = Window & {
   ) => Promise<SaveFileHandle>;
 };
 
+/** Tipo de archivo que se ofrece en el diálogo "Guardar como". */
+export interface SaveFileType {
+  description: string;
+  mime: string;
+  extension: string;
+}
+
+export const ZIP_FILE_TYPE: SaveFileType = {
+  description: 'Archivo ZIP',
+  mime: 'application/zip',
+  extension: '.zip',
+};
+
+export const XLSX_FILE_TYPE: SaveFileType = {
+  description: 'Libro de Excel',
+  mime: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+  extension: '.xlsx',
+};
+
 /** ¿El navegador permite elegir dónde guardar el archivo? */
 export const supportsSavePicker = () =>
   typeof window !== 'undefined' &&
   typeof (window as SavePickerWindow).showSaveFilePicker === 'function';
 
 /**
- * Abre el diálogo nativo "Guardar como" para un `.zip`.
+ * Abre el diálogo nativo "Guardar como".
  *
  * Devuelve `null` si el navegador no soporta la API o si el usuario cancela.
  *
@@ -52,8 +71,9 @@ export const supportsSavePicker = () =>
  * a los pocos segundos. Por eso el nombre sugerido se arma en el cliente en vez
  * de esperar la cabecera `Content-Disposition` de la respuesta.
  */
-export const pickZipDestination = async (
+export const pickSaveDestination = async (
   suggestedName: string,
+  type: SaveFileType,
 ): Promise<SaveFileHandle | null> => {
   const picker = (window as SavePickerWindow).showSaveFilePicker;
   if (!picker) return null;
@@ -63,8 +83,8 @@ export const pickZipDestination = async (
       suggestedName,
       types: [
         {
-          description: 'Archivo ZIP',
-          accept: { 'application/zip': ['.zip'] },
+          description: type.description,
+          accept: { [type.mime]: [type.extension] },
         },
       ],
     });
@@ -109,6 +129,7 @@ export const streamToFile = async (
  */
 export const streamToBlob = async (
   body: ReadableStream<Uint8Array>,
+  mime: string,
   onProgress?: (bytesRead: number) => void,
 ) => {
   const reader = body.getReader();
@@ -123,7 +144,7 @@ export const streamToBlob = async (
     onProgress?.(read);
   }
 
-  return new Blob(chunks as BlobPart[], { type: 'application/zip' });
+  return new Blob(chunks as BlobPart[], { type: mime });
 };
 
 /** Descarga un blob a la carpeta de descargas del navegador. */

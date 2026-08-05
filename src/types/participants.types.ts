@@ -97,6 +97,8 @@ export interface ParticipantExportDownload {
   body: ReadableStream<Uint8Array>;
   /** Tamaño total en bytes (`Content-Length`), o `null` si no viene. */
   size: number | null;
+  /** Nombre propuesto por el backend en `Content-Disposition`. */
+  filename: string;
 }
 
 // ── Paginación ─────────────────────────────────────────────────────────
