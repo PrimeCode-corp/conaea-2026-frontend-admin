@@ -5,6 +5,29 @@ import type { JwtPayload, AuthTokens } from '@/types/auth.types';
 
 let refreshTimeout: ReturnType<typeof setTimeout> | null = null;
 
+/**
+ * Refresco en curso, compartido por todos los que pueden pedirlo a la vez: el
+ * interceptor de axios, el temporizador proactivo, el init al volver a la
+ * pestaña y la descarga de la exportación.
+ *
+ * Sin esto, dos refrescos en paralelo mandan el **mismo** refresh token; si el
+ * backend lo rota e invalida el anterior, el segundo recibe un 401 y cerraba
+ * una sesión que estaba perfectamente viva. Era la causa de que la sesión se
+ * cayera sola durante procesos largos (el sondeo de la exportación, por
+ * ejemplo), donde coinciden varias peticiones con el token venciendo.
+ */
+let refreshInFlight: Promise<boolean> | null = null;
+
+/**
+ * ¿El fallo del refresh es definitivo? Solo cerramos sesión cuando el backend
+ * rechaza el token (4xx). Un corte de red o un 5xx es transitorio: conservamos
+ * la sesión y se reintenta en la siguiente petición.
+ */
+const isDefinitiveAuthFailure = (err: unknown) => {
+  const status = (err as { response?: { status?: number } })?.response?.status;
+  return typeof status === 'number' && status >= 400 && status < 500;
+};
+
 const scheduleTokenRefresh = (
   access: string,
   refreshTokenFn: () => Promise<boolean>,
@@ -16,22 +39,24 @@ const scheduleTokenRefresh = (
     const timeLeft = exp - now;
     const OFFSET = 30; // segundos
 
-    // 🔥 refrescar 10s antes (o la mitad si es corto)
-
+    // 🔥 refrescar 30s antes (o la mitad si es corto)
     const refreshTime = timeLeft > OFFSET ? timeLeft - OFFSET : timeLeft * 0.5;
 
     if (refreshTimeout) clearTimeout(refreshTimeout);
 
-    refreshTimeout = setTimeout(async () => {
-      const success = await refreshTokenFn();
+    refreshTimeout = setTimeout(
+      async () => {
+        const success = await refreshTokenFn();
 
-      if (success) {
-        const newAccess = useAuthStore.getState().authTokens?.access;
-        if (newAccess) {
-          scheduleTokenRefresh(newAccess, refreshTokenFn);
+        if (success) {
+          const newAccess = useAuthStore.getState().authTokens?.access;
+          if (newAccess) {
+            scheduleTokenRefresh(newAccess, refreshTokenFn);
+          }
         }
-      }
-    }, refreshTime * 1000);
+      },
+      Math.max(0, refreshTime) * 1000,
+    );
   } catch (err) {
     console.error('Error scheduling refresh', err);
   }
@@ -46,6 +71,8 @@ interface AuthState {
   logout: () => void;
   refreshToken: () => Promise<boolean>;
   isAuthenticated: () => boolean;
+  /** Rearma el refresco proactivo (tras recargar la página, por ejemplo). */
+  ensureRefreshScheduled: () => void;
 
   setAuth: (tokens: AuthTokens, user: JwtPayload) => void;
 }
@@ -85,25 +112,46 @@ export const useAuthStore = create<AuthState>()(
       },
 
       refreshToken: async () => {
+        // Si ya hay uno en vuelo, todos esperan ese mismo intento.
+        if (refreshInFlight) return refreshInFlight;
+
         const { authTokens, setAuth } = get();
 
-        if (!authTokens?.refresh) return false;
-
-        try {
-          const { tokens, user } = await authService.refreshToken(
-            authTokens.refresh,
-          );
-
-          setAuth(tokens, user);
-
-          // 🔁 reprogramar refresh
-          scheduleTokenRefresh(tokens.access, get().refreshToken);
-
-          return true;
-        } catch {
+        if (!authTokens?.refresh) {
           get().logout();
           return false;
         }
+
+        refreshInFlight = (async () => {
+          try {
+            const { tokens, user } = await authService.refreshToken(
+              authTokens.refresh,
+            );
+
+            setAuth(tokens, user);
+
+            // 🔁 reprogramar refresh
+            scheduleTokenRefresh(tokens.access, get().refreshToken);
+
+            return true;
+          } catch (err) {
+            if (isDefinitiveAuthFailure(err)) {
+              get().logout();
+            }
+            // Fallo transitorio: mantenemos la sesión y se reintenta luego.
+            return false;
+          } finally {
+            refreshInFlight = null;
+          }
+        })();
+
+        return refreshInFlight;
+      },
+
+      ensureRefreshScheduled: () => {
+        const { authTokens } = get();
+        if (!authTokens?.access) return;
+        scheduleTokenRefresh(authTokens.access, get().refreshToken);
       },
 
       isAuthenticated: () => {
@@ -111,7 +159,13 @@ export const useAuthStore = create<AuthState>()(
 
         if (!authTokens?.access) return false;
 
-        return authService.isTokenValid(authTokens.access);
+        // Un access vencido no cierra la sesión: mientras el refresh siga
+        // vivo, la próxima petición lo renueva sola. Antes bastaba con que el
+        // access expirara para que las rutas privadas mandaran al login.
+        return (
+          authService.isTokenValid(authTokens.access) ||
+          authService.isTokenValid(authTokens.refresh)
+        );
       },
     }),
     {

@@ -25,23 +25,18 @@ api.interceptors.request.use((config) => {
 // =========================
 // RESPONSE
 // =========================
-let isRefreshing = false;
 
-type FailedRequest = {
-  resolve: (token: string) => void;
-  reject: (error: unknown) => void;
-};
-
-let failedQueue: FailedRequest[] = [];
-
-const processQueue = (error: unknown, token: string | null = null) => {
-  failedQueue.forEach((prom) => {
-    if (error) prom.reject(error);
-    else if (token) prom.resolve(token);
-  });
-  failedQueue = [];
-};
-
+/**
+ * Ante un 401 delegamos el refresco en el store, que lo serializa: varias
+ * peticiones que fallan a la vez esperan el mismo intento en lugar de disparar
+ * uno cada una. Antes el interceptor refrescaba por su cuenta, en paralelo con
+ * el temporizador proactivo y con el resto de la app; si el backend rota el
+ * refresh token, el segundo intento llegaba con uno ya invalidado y cerraba la
+ * sesión sin motivo.
+ *
+ * Tampoco forzamos aquí la redirección al login: si el fallo es definitivo el
+ * store cierra sesión y las rutas privadas se encargan de sacar al usuario.
+ */
 api.interceptors.response.use(
   (response) => response,
   async (error) => {
@@ -50,60 +45,21 @@ api.interceptors.response.use(
     };
 
     // evitar loop infinito
-    if (original.url?.includes('/token/refresh/')) {
+    if (!original || original.url?.includes('/token/refresh/')) {
       return Promise.reject(error);
     }
 
     if (error.response?.status === 401 && !original._retry) {
-      const { authTokens, setAuth, logout } = useAuthStore.getState();
-
-      if (!authTokens?.refresh) {
-        logout();
-        return Promise.reject(error);
-      }
-
-      if (isRefreshing) {
-        return new Promise((resolve, reject) => {
-          failedQueue.push({
-            resolve: (token: string) => {
-              original.headers!.Authorization = `Bearer ${token}`;
-              resolve(api(original));
-            },
-            reject,
-          });
-        });
-      }
-
       original._retry = true;
-      isRefreshing = true;
 
-      try {
-        const response = await axios.post(
-          `${import.meta.env.VITE_API_URL}/token/refresh/`,
-          {
-            refresh: authTokens.refresh,
-          },
-        );
+      const refreshed = await useAuthStore.getState().refreshToken();
+      if (!refreshed) return Promise.reject(error);
 
-        const newAccess = response.data.access;
-        const newRefresh = response.data.refresh ?? authTokens.refresh;
+      const access = useAuthStore.getState().authTokens?.access;
+      if (!access) return Promise.reject(error);
 
-        const user = JSON.parse(atob(newAccess.split('.')[1]));
-
-        setAuth({ access: newAccess, refresh: newRefresh }, user);
-
-        processQueue(null, newAccess);
-
-        original.headers!.Authorization = `Bearer ${newAccess}`;
-        return api(original);
-      } catch (err) {
-        processQueue(err, null);
-        logout();
-        window.location.href = '/login';
-        return Promise.reject(err);
-      } finally {
-        isRefreshing = false;
-      }
+      original.headers!.Authorization = `Bearer ${access}`;
+      return api(original);
     }
 
     return Promise.reject(error);

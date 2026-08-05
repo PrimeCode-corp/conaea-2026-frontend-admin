@@ -27,7 +27,15 @@ const authorizedFetch = async (url: string, signal?: AbortSignal) => {
   if (res.status !== 401) return res;
 
   const refreshed = await useAuthStore.getState().refreshToken();
-  if (!refreshed) throw new Error('Tu sesión expiró. Vuelve a iniciar sesión.');
+  if (!refreshed) {
+    // El store solo borra los tokens cuando el rechazo es definitivo; si
+    // siguen ahí, fue un fallo transitorio y la sesión no se perdió.
+    throw new Error(
+      useAuthStore.getState().authTokens
+        ? 'No se pudo renovar la sesión. Revisa tu conexión e intenta de nuevo.'
+        : 'Tu sesión expiró. Vuelve a iniciar sesión.',
+    );
+  }
 
   return request(useAuthStore.getState().authTokens?.access);
 };
