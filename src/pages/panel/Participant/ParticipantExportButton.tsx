@@ -439,28 +439,31 @@ const ParticipantExportButton = ({
           align='end'
           className='w-72 bg-[#111] text-slate-200 border border-white/10'
         >
+          {/* Los colores de los hijos van con `!`: el estilo base del item
+              fuerza `text-accent-foreground` en todos sus descendientes al
+              enfocar, y sin importante el texto se volvía negro sobre gris. */}
           <DropdownMenuItem
-            className='cursor-pointer flex-col items-start gap-0.5 focus:bg-white/5 focus:text-slate-100'
+            className='cursor-pointer flex-col items-start gap-0.5 focus:bg-[#fbba0e]/10'
             onClick={() => handleExport('zip')}
           >
-            <span className='flex items-center gap-2 font-semibold'>
-              <Package className='h-3.5 w-3.5 text-[#fbba0e]' />
+            <span className='flex items-center gap-2 font-semibold text-slate-100!'>
+              <Package className='h-3.5 w-3.5 text-[#fbba0e]!' />
               Expedientes (.zip)
             </span>
-            <span className='pl-[22px] text-xs text-slate-400'>
+            <span className='pl-[22px] text-xs text-slate-400!'>
               Una carpeta por participante con foto, QR, ficha y vouchers.
             </span>
           </DropdownMenuItem>
 
           <DropdownMenuItem
-            className='cursor-pointer flex-col items-start gap-0.5 focus:bg-white/5 focus:text-slate-100'
+            className='cursor-pointer flex-col items-start gap-0.5 focus:bg-[#fbba0e]/10'
             onClick={() => handleExport('xlsx')}
           >
-            <span className='flex items-center gap-2 font-semibold'>
-              <FileSpreadsheet className='h-3.5 w-3.5 text-[#fbba0e]' />
+            <span className='flex items-center gap-2 font-semibold text-slate-100!'>
+              <FileSpreadsheet className='h-3.5 w-3.5 text-[#fbba0e]!' />
               Tabla de datos (.xlsx)
             </span>
-            <span className='pl-[22px] text-xs text-slate-400'>
+            <span className='pl-[22px] text-xs text-slate-400!'>
               Datos y estado de cada participante, con enlaces a sus archivos.
             </span>
           </DropdownMenuItem>
