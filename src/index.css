@@ -140,6 +140,15 @@ html {
   animation: blink 0.9s step-end infinite;
 }
 
+/* Barra de progreso indeterminada: se usa mientras no conocemos el total. */
+@keyframes progress-loop {
+  0% { transform: translateX(-100%); }
+  100% { transform: translateX(300%); }
+}
+.animate-progress-loop {
+  animation: progress-loop 1.4s ease-in-out infinite;
+}
+
 * {
   scrollbar-width: thin;
   scrollbar-color: #fbba0e33 transparent;

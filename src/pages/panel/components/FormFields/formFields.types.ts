@@ -15,6 +15,12 @@ interface Field {
   required?: boolean;
   requiredOnCreate?: boolean;
   condition?: (form: Record<string, unknown>, currentPhoto?: string) => boolean;
+  /**
+   * Validación propia del campo, más allá de `required`. Devuelve el mensaje
+   * de error o `null` si el valor es válido (p. ej. formato y peso de una
+   * imagen). Se ejecuta solo si el campo pasó la validación de requerido.
+   */
+  validate?: (value: unknown, form: Record<string, unknown>) => string | null;
   hint?: (form: Record<string, unknown>) => React.ReactNode;
 }
 

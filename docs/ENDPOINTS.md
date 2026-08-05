@@ -94,6 +94,10 @@ Lista completa de endpoints HTTP que consume este panel de administración.
 | PATCH | `/participants/participant/{id}/update/` | `participantService.update` | `multipart/form-data` |
 | PATCH | `/participants/participant/{id}/deactivate/` | `participantService.remove` | Soft-delete |
 | GET | `/participants/stats/` | `participantService.getStats` | `total`, `validated`, `pending` |
+| POST | `/participants/export/` | `participantService.startExport` | Arranca la exportación → `202 { task_id, total, … }` (`204` si no hay resultados). Filtros: `pre_sale_id`, `quota_type_id`, `university_code` |
+| GET | `/participants/export/{task_id}/` | `participantService.getExportStatus` | Avance: `status`, `processed`, `total`, `progress`, `download_url`. Se sondea cada `retry_after` segundos |
+| DELETE | `/participants/export/{task_id}/` | `participantService.cancelExport` | Cancela la exportación en el servidor |
+| GET | `/participants/export/{task_id}/download/` | `participantService.downloadExport` | El `.zip` ya generado (`410` si venció). **Única llamada con `fetch` en vez de axios**, para escribir la respuesta a disco en streaming |
 | PATCH | `/participants/enrollment/{id}/` | `enrollmentService.update` | `multipart/form-data` |
 | GET | `/participants/partner-universities/` | `partnerUniversityService.getAll` | Params: `page`, `search`, `quota_type_id`, `page_size` |
 | GET | `/participants/partner-universities/{id}/` | `partnerUniversityService.getById` | |

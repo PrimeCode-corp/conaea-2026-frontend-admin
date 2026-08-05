@@ -12,6 +12,7 @@ import { getServerFooterProps } from '@/utils/pagination';
 import { useParticipantStore } from '@/store/useParticipantStore';
 import { useDisclosure } from '@/hooks/useDisclosure';
 import ParticipantFilters from './ParticipantFilters';
+import ParticipantExportButton from './ParticipantExportButton';
 import { getParticipantColumns } from './columns';
 import ParticipantTableButtons from './ParticipantTableButtons';
 import type { ParticipantTableItem } from '@/types/participants.types';
@@ -134,11 +135,18 @@ const Participant = () => {
             }
             onUniversityCodeChange={setSelectedUniversityCode}
           />
-          <SearchPanel
-            search={search}
-            setSearch={setSearch}
-            placeholder='Buscar participantes...'
-          />
+          <div className='flex items-center gap-2'>
+            <ParticipantExportButton
+              preSaleId={selectedPreSaleId}
+              quotaTypeId={selectedQuotaTypeId}
+              universityCode={selectedUniversityCode}
+            />
+            <SearchPanel
+              search={search}
+              setSearch={setSearch}
+              placeholder='Buscar participantes...'
+            />
+          </div>
         </div>
 
         <TablePanel

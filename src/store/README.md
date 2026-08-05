@@ -37,12 +37,13 @@ export const useQuotaTypeStore = create<QuotaTypeStore>((set, get) => {
 - El store puede añadir estado/acciones propias junto a las de la factory (ver `useDayStore`, que añade `activities`/`fetchActivities`).
 - Para payloads de actualización distintos al de creación (p. ej. `FormData`), pasa el 4º genérico: `createCrudActions<Store, T, FormData, FormData>(...)` (ver `useSpeakerStore`).
 
-Usan la factory: `useDayStore`, `useActivityTypeStore`, `useQuotaTypeStore`, `useSpeakerStore`.
+Usan la factory: `useDayStore`, `useActivityTypeStore`, `useQuotaTypeStore`, `useSpeakerStore`, `useNetworkStore`.
 
 ## Stores especiales (no factory)
 
 - **Paginación de servidor** (`usePartnerUniversityStore`, `useDelegateStore`, `useParticipantStore`, `useDynamicCodeStore`): guardan `meta`/`page` y aceptan filtros en `fetch`.
 - **`useActivityStore`**: la lista es `ActivityDetail[]` (objetos anidados); create/update re-piden el detalle.
+- **`usePartnerStore`**: create/update re-piden el detalle (la respuesta de POST/PATCH no trae `networks`) y añade las acciones de los enlaces a redes (`createPartnerLink`/`updatePartnerLink`/`removePartnerLink`), que resincronizan `partner.networks`. Deja propagar el error crudo de la API para que la UI lea `detail` y los errores por campo.
 - **`useAuthStore`**: JWT (access+refresh), refresh automático (30s antes de expirar), cola de requests durante el refresh; usa `persist` a localStorage.
 
 ## Convenciones

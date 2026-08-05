@@ -24,6 +24,9 @@ import DynamicCode from './pages/panel/DynamicCode';
 import Delegates from './pages/panel/Delegates';
 import IndividualCup from './pages/panel/IndividualCup';
 
+import Partner from './pages/panel/Partner';
+import Network from './pages/panel/Network';
+
 import './App.css';
 
 function App() {
@@ -53,6 +56,9 @@ function App() {
           <Route path='/dynamic-code' element={<DynamicCode />} />
           <Route path='/delegate' element={<Delegates />} />
           <Route path='/individual-cup' element={<IndividualCup />} />
+
+          <Route path='/partner' element={<Partner />} />
+          <Route path='/network' element={<Network />} />
 
           <Route path='/change-password' element={<ChangePassword />} />
         </Route>

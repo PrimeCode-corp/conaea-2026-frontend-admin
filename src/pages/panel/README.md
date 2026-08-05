@@ -43,6 +43,7 @@ return (
 - **Paginación de servidor** (PartnerUniversity, Delegates, Participant, DynamicCode): JSX propio (no `CrudPanelLayout`); `useServerTable` para el refetch con debounce y `<FooterPanel {...getServerFooterProps(meta, page, onPageChange)} />` para el pie.
 - **Cabeceras con estadísticas / overlays** (AvailableSlot, IndividualCup): JSX propio + `useCrudPanel` con `getEditFields` (campos dinámicos con `hint`) y `fieldErrors: true`. Indicadores con `components/SlotIndicator`.
 - **Edición en modal aparte** (Participant): no usa formulario inline; modales gestionados con `useDisclosure`.
+- **Entidad con hijos que se guardan por separado** (Partner): `CrudPanelLayout` para el auspiciador + `modals/ModalPartnerNetworks` para sus enlaces a redes (cada uno con su propio request). Tras crear, los ActionButtons avisan con `onCreated` para encadenar las redes.
 
 ## Reglas
 

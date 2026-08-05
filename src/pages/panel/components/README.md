@@ -13,6 +13,7 @@ Componentes compartidos por las páginas del panel. (Los componentes shadcn/ui g
 | `PagerButton` | Botón de navegación (primera/anterior/siguiente/última) usado por `FooterPanel`. |
 | `SearchPanel` | Input de búsqueda. |
 | `SlotIndicator` | Indicador vertical "máximo / usado" (AvailableSlot, IndividualCup). |
+| `NetworkIcon` | Icono de una red social a partir de `Network.logo` (identificador, no URL), con fallback. Exporta `NETWORK_ICON_OPTIONS`, el catálogo que alimenta el select del formulario (Network, Partner). |
 
 ## Modales (`modals/`)
 
@@ -27,7 +28,8 @@ Componentes compartidos por las páginas del panel. (Los componentes shadcn/ui g
 
 - `FormFields` recorre la definición de `fields` y delega cada campo en el `InputController`.
 - `InputController/` resuelve el tipo de campo: `FormInput`, `FormFile`, `FormPhoto`, `FormSearchSelect`, `FormUniversitySelect`, etc.
-- El tipo `Field` vive en `FormFields/formFields.types.ts` (`kind`, `id`, `required`, `requiredOnCreate`, `condition`, `hint`, …).
+- El tipo `Field` vive en `FormFields/formFields.types.ts` (`kind`, `id`, `required`, `requiredOnCreate`, `condition`, `hint`, `validate`, …).
+- `validate(value, form)` es la validación propia del campo (formato/peso de una imagen, duplicados…): la ejecuta `@/utils/validations` tras la de requerido y devuelve el mensaje o `null`.
 
 ## Convenciones
 

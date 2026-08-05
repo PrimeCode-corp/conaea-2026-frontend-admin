@@ -12,6 +12,8 @@ import {
   Barcode,
   Users,
   Contact,
+  Handshake,
+  Share2,
 } from 'lucide-react';
 
 import type { NavGroup } from './appSidebar.types';
@@ -50,5 +52,12 @@ export const navGroups: NavGroup[] = [
   {
     label: 'Participantes',
     items: [{ label: 'Speakers', path: '/speaker', icon: Mic2 }],
+  },
+  {
+    label: 'Patrocinadores',
+    items: [
+      { label: 'Auspiciadores', path: '/partner', icon: Handshake },
+      { label: 'Redes Sociales', path: '/network', icon: Share2 },
+    ],
   },
 ];
