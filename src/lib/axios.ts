@@ -45,7 +45,7 @@ api.interceptors.response.use(
     };
 
     // evitar loop infinito
-    if (!original || original.url?.includes('/token/refresh/')) {
+    if (!original || original.url?.includes('token/refresh/')) {
       return Promise.reject(error);
     }
 
